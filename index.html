@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOSEH</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;}
+.phone-shell{width:390px;height:780px;background:#fff;border-radius:40px;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.18);border:8px solid #1a1a1a;}
+.status-bar{height:44px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.status-time{font-size:13px;font-weight:600;color:#111827;}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;background:#fff;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;transform:translateX(100%);opacity:0;pointer-events:none;}
+.screen.active{transform:translateX(0);opacity:1;pointer-events:all;}
+.screen.slide-left{transform:translateX(-100%);opacity:0;pointer-events:none;}
+.scroll-content{flex:1;overflow-y:auto;overflow-x:hidden;}
+.scroll-content::-webkit-scrollbar{display:none;}
+:root{--green:#0FA958;--teal:#0EA5A4;--amber:#F4B400;--surface:#F9FAFB;--input-bg:#F3F4F6;--border:#E5E7EB;--text-primary:#111827;--text-secondary:#6B7280;}
+.btn-primary{background:var(--green);color:#fff;border:none;border-radius:14px;padding:15px;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:opacity 0.2s;}
+.btn-primary:active{opacity:0.85;}
+.btn-secondary{background:transparent;color:var(--teal);border:2px solid var(--teal);border-radius:14px;padding:14px;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:all 0.2s;}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:none;font-family:'Poppins',sans-serif;font-size:14px;cursor:pointer;padding:8px;}
+.input-field{background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-family:'Poppins',sans-serif;font-size:14px;color:var(--text-primary);width:100%;outline:none;transition:border-color 0.2s;}
+.input-field:focus{border-color:var(--green);}
+.input-label{font-size:13px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;}
+.nav-bar{height:72px;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;flex-shrink:0;padding-bottom:8px;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 12px;border-radius:12px;}
+.nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--green);}
+.nav-icon{font-size:22px;color:var(--text-secondary);}
+.nav-label{font-size:10px;font-weight:500;color:var(--text-secondary);}
+.card-surface{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;}
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:#E8F8EF;color:#0A7D40;}
+.badge-teal{background:#E0F7F7;color:#0A7878;}
+.badge-amber{background:#FEF3CD;color:#B45309;}
+.badge-red{background:#FEE2E2;color:#991B1B;}
+.snackbar{position:absolute;bottom:90px;left:20px;right:20px;background:#111827;color:#fff;padding:13px 16px;border-radius:12px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;text-align:center;}
+.snackbar.show{opacity:1;}
+.toggle-container{display:flex;background:var(--input-bg);border-radius:12px;padding:4px;}
+.toggle-option{flex:1;padding:10px;text-align:center;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);transition:all 0.2s;}
+.toggle-option.active{background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+.otp-box{width:52px;height:58px;background:var(--input-bg);border:2px solid var(--border);border-radius:12px;font-size:22px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;color:var(--text-primary);outline:none;transition:border-color 0.2s;}
+.otp-box:focus{border-color:var(--green);}
+.cat-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;color:var(--text-secondary);background:#fff;transition:all 0.2s;flex-shrink:0;}
+.cat-pill.selected{border-color:var(--green);color:var(--green);background:#E8F8EF;}
+.lang-btn{background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:500;color:var(--text-primary);cursor:pointer;text-align:left;width:100%;transition:all 0.2s;display:flex;align-items:center;justify-content:space-between;}
+.lang-btn.selected{border-color:var(--green);background:#E8F8EF;color:var(--green);}
+.req-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;cursor:pointer;}
+.back-btn{width:36px;height:36px;background:var(--input-bg);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:18px;flex-shrink:0;}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:15px;flex-shrink:0;}
+.avatar-lg{width:72px;height:72px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:24px;}
+.star{font-size:18px;cursor:pointer;color:#D1D5DB;transition:color 0.15s;}
+.star.filled{color:var(--amber);}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.section-title{font-size:16px;font-weight:600;color:var(--text-primary);}
+.section-action{font-size:13px;font-weight:500;color:var(--teal);cursor:pointer;}
+.notif-dot{width:8px;height:8px;background:#EF4444;border-radius:50%;position:absolute;top:4px;right:4px;}
+.map-box{width:100%;height:210px;border-radius:12px;overflow:hidden;position:relative;}
+.map-box-sm{width:100%;height:180px;border-radius:12px;overflow:hidden;position:relative;}
+.map-loading{position:absolute;inset:0;background:#E8F8EF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:400;border-radius:12px;pointer-events:none;}
+.map-loading-spinner{width:28px;height:28px;border:3px solid #c8f0dc;border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.map-loading p{font-size:12px;font-weight:500;color:var(--green);}
+.map-locate-btn{position:absolute;bottom:10px;right:10px;z-index:800;width:36px;height:36px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.state-selector{display:flex;gap:8px;margin-bottom:10px;}
+.state-btn{flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);background:#fff;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary);transition:all 0.2s;text-align:center;}
+.state-btn.active{border-color:var(--green);background:#E8F8EF;color:var(--green);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-secondary);}
+.empty-state .empty-icon{font-size:42px;margin-bottom:12px;}
+.empty-state p{font-size:14px;line-height:1.6;}
+input.input-field::placeholder,textarea.input-field::placeholder{color:#9CA3AF;}
+.role-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;background:#E8F8EF;color:var(--green);margin-left:8px;}
+.translate-spinner{display:inline-block;width:14px;height:14px;border:2px solid #c8f0dc;border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;margin-left:6px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<div class="phone-shell">
+<div id="snackbar" class="snackbar"></div>
+
+<!-- ══ SCREEN 1: LANGUAGE ══ -->
+<div class="screen active" id="screen-lang">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding:32px 24px;">
+    <div style="text-align:center;margin-bottom:36px;">
+      <div style="width:72px;height:72px;background:var(--green);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="38" height="38" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" fill="rgba(255,255,255,0.2)"/><path d="M14 18c0-3.314 2.686-6 6-6s6 2.686 6 6c0 4-6 11-6 11s-6-7-6-11z" fill="#fff"/><circle cx="20" cy="18" r="2.5" fill="#0FA958"/></svg>
+      </div>
+      <h1 style="font-size:26px;font-weight:700;color:var(--text-primary);">VOSEH</h1>
+      <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Village Opportunity &amp; Skill Exchange Hub</p>
+    </div>
+    <p style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Choose your language</p>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">భాష ఎంచుకోండి / भाषा चुनें / மொழியை தேர்வு செய்க</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="lang-btn selected" onclick="selectLang(this,'en')"><span>🇬🇧 English</span><span id="lck-en" style="color:var(--green);font-size:18px;">✓</span></button>
+      <button class="lang-btn" onclick="selectLang(this,'hi')"><span>🇮🇳 हिन्दी (Hindi)</span><span id="lck-hi" style="color:transparent;font-size:18px;">✓</span></button>
+      <button class="lang-btn" onclick="selectLang(this,'te')"><span>🇮🇳 తెలుగు (Telugu)</span><span id="lck-te" style="color:transparent;font-size:18px;">✓</span></button>
+      <button class="lang-btn" onclick="selectLang(this,'ta')"><span>🇮🇳 தமிழ் (Tamil)</span><span id="lck-ta" style="color:transparent;font-size:18px;">✓</span></button>
+    </div>
+    <div style="margin-top:28px;"><button class="btn-primary" id="lang-continue-btn" onclick="goTo('screen-splash')">Continue</button></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: SPLASH ══ -->
+<div class="screen" id="screen-splash">
+  <div style="flex:1;background:linear-gradient(160deg,#E8F8EF 0%,#fff 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 28px;">
+    <div style="width:110px;height:110px;background:var(--green);border-radius:28px;display:flex;align-items:center;justify-content:center;margin-bottom:28px;">
+      <svg width="60" height="60" viewBox="0 0 60 60" fill="none"><circle cx="30" cy="18" r="9" fill="#fff" opacity="0.9"/><path d="M14 48c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M44 22l6-4M44 30h7M44 38l6 4" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/></svg>
+    </div>
+    <h2 id="splash-title" style="font-size:26px;font-weight:700;color:var(--text-primary);text-align:center;">Connect your village</h2>
+    <p id="splash-sub" style="font-size:14px;color:var(--text-secondary);text-align:center;margin-top:10px;line-height:1.7;">Share skills, find help, and grow together.</p>
+  </div>
+  <div style="padding:24px 28px 36px;">
+    <button class="btn-primary" id="splash-cta" onclick="goTo('screen-phone')">Get Started</button>
+    <button class="btn-ghost" style="width:100%;margin-top:8px;" onclick="goTo('screen-phone')"><span id="splash-signin">Already have an account?</span> <span style="color:var(--green);font-weight:600;" id="splash-signin2">Sign in</span></button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: PHONE ══ -->
+<div class="screen" id="screen-phone">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding:20px 24px;">
+    <button class="back-btn" onclick="goTo('screen-splash')">←</button>
+    <div style="margin:24px 0 28px;">
+      <h2 id="phone-title" style="font-size:22px;font-weight:700;color:var(--text-primary);">Enter your number</h2>
+      <p id="phone-sub" style="font-size:13px;color:var(--text-secondary);margin-top:6px;">We'll send you a verification code via SMS</p>
+    </div>
+    <div style="margin-bottom:16px;"><p class="input-label" id="lbl-name">Full Name</p><input class="input-field" id="input-name" type="text" placeholder="Your full name"/></div>
+    <div style="margin-bottom:24px;"><p class="input-label" id="lbl-phone">Mobile Number</p>
+      <div style="display:flex;gap:10px;"><div style="background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;">+91</div>
+      <input class="input-field" id="input-phone" type="tel" placeholder="10-digit number" maxlength="10"/></div>
+    </div>
+    <p id="phone-error" style="font-size:12px;color:#EF4444;margin-bottom:10px;display:none;"></p>
+    <button class="btn-primary" id="phone-cta" onclick="handleSendOTP()">Send OTP</button>
+    <div style="margin-top:20px;padding:14px;background:#E8F8EF;border-radius:12px;">
+      <p id="dual-role-title" style="font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px;">✅ Your account is dual-role</p>
+      <p id="dual-role-sub" style="font-size:11px;color:#0A7D40;line-height:1.5;">You can both ask for help and offer your skills — switch anytime from the Home screen.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: OTP ══ -->
+<div class="screen" id="screen-otp">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding:20px 24px;">
+    <button class="back-btn" onclick="goTo('screen-phone')">←</button>
+    <div style="margin:24px 0 28px;">
+      <h2 id="otp-title" style="font-size:22px;font-weight:700;color:var(--text-primary);">Verify your number</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;"><span id="otp-sub">Enter the 4-digit code sent to</span> <strong id="otp-phone-display"></strong></p>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:20px;" id="otp-inputs">
+      <input class="otp-box" maxlength="1" type="tel" oninput="otpAutoTab(this,0)"/>
+      <input class="otp-box" maxlength="1" type="tel" oninput="otpAutoTab(this,1)"/>
+      <input class="otp-box" maxlength="1" type="tel" oninput="otpAutoTab(this,2)"/>
+      <input class="otp-box" maxlength="1" type="tel" oninput="otpAutoTab(this,3)"/>
+    </div>
+    <div style="background:#E8F8EF;border-radius:10px;padding:10px 14px;margin-bottom:20px;text-align:center;">
+      <p id="demo-note" style="font-size:12px;color:var(--green);font-weight:600;">Demo mode: enter any 4 digits to continue</p>
+    </div>
+    <button class="btn-primary" id="otp-verify-btn" onclick="verifyOTP()">Verify &amp; Continue</button>
+    <p style="text-align:center;font-size:13px;color:var(--text-secondary);margin-top:14px;"><span id="otp-resend-q">Didn't receive?</span> <span id="otp-resend-lnk" style="color:var(--teal);font-weight:600;cursor:pointer;">Resend</span></p>
+  </div>
+</div>
+
+<!-- ══ SCREEN 5: PROFILE SETUP ══ -->
+<div class="screen" id="screen-profile">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding:20px 24px;">
+    <div style="margin-bottom:20px;">
+      <p id="profile-step" style="font-size:12px;color:var(--text-secondary);font-weight:500;">OPTIONAL · STEP 2</p>
+      <h2 id="profile-title" style="font-size:22px;font-weight:700;color:var(--text-primary);margin-top:4px;">Add your skills</h2>
+      <p id="profile-sub" style="font-size:13px;color:var(--text-secondary);margin-top:6px;">Fill this if you want to offer services. You can skip and do it later.</p>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:20px;"><div class="avatar-lg" id="profile-avatar-lg">?</div></div>
+    <div style="margin-bottom:14px;"><p class="input-label" id="lbl-occupation">Occupation</p><input class="input-field" id="input-occupation" type="text"/><span id="ph-occupation" style="display:none;">e.g. Electrician, Plumber, Farmer</span></div>
+    <div style="margin-bottom:14px;"><p class="input-label" id="lbl-about">About your skills</p><textarea class="input-field" id="input-about" rows="3" style="resize:none;"></textarea><span id="ph-about" style="display:none;">Describe your experience...</span></div>
+    <div style="margin-bottom:20px;"><p class="input-label" id="lbl-skills">Select your skills</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;" id="skill-pills">
+        <div class="cat-pill" data-en="⚡ Electrical" onclick="togglePill(this)">⚡ Electrical</div>
+        <div class="cat-pill" data-en="🔧 Plumbing" onclick="togglePill(this)">🔧 Plumbing</div>
+        <div class="cat-pill" data-en="🪚 Carpentry" onclick="togglePill(this)">🪚 Carpentry</div>
+        <div class="cat-pill" data-en="🌾 Farming" onclick="togglePill(this)">🌾 Farming</div>
+        <div class="cat-pill" data-en="🚗 Driving" onclick="togglePill(this)">🚗 Driving</div>
+        <div class="cat-pill" data-en="🍳 Cooking" onclick="togglePill(this)">🍳 Cooking</div>
+        <div class="cat-pill" data-en="📚 Teaching" onclick="togglePill(this)">📚 Teaching</div>
+        <div class="cat-pill" data-en="⚙️ General" onclick="togglePill(this)">⚙️ General</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="profile-save-btn" onclick="saveProfile()">Save &amp; Go to Home</button>
+    <button class="btn-ghost" id="profile-skip-btn" style="width:100%;margin-top:8px;" onclick="skipProfile()">Skip for now →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 6: HOME ══ -->
+<div class="screen" id="screen-home">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding:0 0 16px;">
+    <div style="padding:12px 20px 0;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <p id="home-morning" style="font-size:13px;color:var(--text-secondary);">Hello 👋</p>
+        <div style="display:flex;align-items:center;">
+          <h2 id="home-greeting-name" style="font-size:20px;font-weight:700;color:var(--text-primary);">Welcome</h2>
+          <span class="role-badge" id="home-role-badge">Customer</span>
+        </div>
+      </div>
+      <div style="position:relative;cursor:pointer;" onclick="goTo('screen-notif')">
+        <div style="width:42px;height:42px;background:var(--surface);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a6 6 0 00-6 6v2l-1.5 2.5a.5.5 0 00.433.75h14.134a.5.5 0 00.433-.75L16 10V8a6 6 0 00-6-6z" stroke="#6B7280" stroke-width="1.5"/><path d="M8 15.5a2 2 0 004 0" stroke="#6B7280" stroke-width="1.5"/></svg>
+        </div>
+        <div class="notif-dot" id="home-notif-dot" style="display:none;"></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px 0;">
+      <div class="toggle-container">
+        <div class="toggle-option active" id="home-customer" onclick="setHomeRole('customer')">🙋 <span id="lbl-need-help">Need Help</span></div>
+        <div class="toggle-option" id="home-worker" onclick="setHomeRole('worker')">🔨 <span id="lbl-offer-skills">Offer Skills</span></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px 0;" id="home-customer-area">
+      <div style="background:linear-gradient(135deg,#0FA958,#0EA5A4);border-radius:16px;padding:20px;cursor:pointer;" onclick="goTo('screen-post')">
+        <p id="home-help-q" style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:500;">What do you need help with?</p>
+        <p id="home-post-btn" style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;">Post a Request</p>
+        <div style="margin-top:10px;background:rgba(255,255,255,0.2);border-radius:10px;padding:10px 14px;"><span id="home-post-ph" style="font-size:13px;color:#fff;opacity:0.8;">Describe your problem...</span></div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="section-header"><span class="section-title" id="lbl-my-requests">My Requests</span><span class="section-action" id="lbl-see-all" onclick="goTo('screen-history')">See all</span></div>
+        <div id="home-my-requests"></div>
+      </div>
+    </div>
+    <div style="padding:14px 20px 0;display:none;" id="home-worker-area">
+      <div style="background:linear-gradient(135deg,#0EA5A4,#0FA958);border-radius:16px;padding:20px;cursor:pointer;" onclick="goTo('screen-browse')">
+        <p id="home-jobs-near" style="font-size:13px;color:rgba(255,255,255,0.8);font-weight:500;">Jobs near your area</p>
+        <p id="home-browse-btn" style="font-size:18px;font-weight:700;color:#fff;margin-top:4px;">Browse Requests</p>
+        <div id="home-browse-badge" style="margin-top:10px;display:inline-block;background:rgba(255,255,255,0.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;font-weight:600;">View available jobs</div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="section-header"><span class="section-title" id="lbl-my-skills">My Skills</span><span class="section-action" id="lbl-edit" onclick="goTo('screen-profile')">Edit</span></div>
+        <div id="home-my-skills" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item active" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label" id="nav-home">Home</span></div>
+    <div class="nav-item" onclick="goTo('screen-browse')"><span class="nav-icon">🔍</span><span class="nav-label" id="nav-browse">Browse</span></div>
+    <div class="nav-item" onclick="goTo('screen-post')"><div style="width:48px;height:48px;background:var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 12px rgba(15,169,88,0.4);"><span style="font-size:24px;color:#fff;">+</span></div><span class="nav-label" id="nav-post" style="margin-top:2px;">Post</span></div>
+    <div class="nav-item" onclick="goTo('screen-history')"><span class="nav-icon">📋</span><span class="nav-label" id="nav-history">History</span></div>
+    <div class="nav-item" onclick="goTo('screen-profile-view')"><span class="nav-icon">👤</span><span class="nav-label" id="nav-profile">Profile</span></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 7: POST REQUEST ══ -->
+<div class="screen" id="screen-post">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border);">
+    <button class="back-btn" onclick="goTo('screen-home')">←</button>
+    <h2 id="post-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Post a Request</h2>
+  </div>
+  <div class="scroll-content" style="padding:16px 20px 20px;">
+    <div style="margin-bottom:14px;"><p class="input-label" id="lbl-describe">Describe your problem</p><textarea class="input-field" id="post-description" rows="3" style="resize:none;"></textarea></div>
+    <div style="margin-bottom:14px;"><p class="input-label" id="lbl-category">Category</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;" id="post-category-pills">
+        <div class="cat-pill" data-cat="Electrical" onclick="selectSinglePill(this,'post-category-pills')">⚡ <span class="cat-text">Electrical</span></div>
+        <div class="cat-pill" data-cat="Plumbing" onclick="selectSinglePill(this,'post-category-pills')">🔧 <span class="cat-text">Plumbing</span></div>
+        <div class="cat-pill" data-cat="Carpentry" onclick="selectSinglePill(this,'post-category-pills')">🪚 <span class="cat-text">Carpentry</span></div>
+        <div class="cat-pill" data-cat="Farming" onclick="selectSinglePill(this,'post-category-pills')">🌾 <span class="cat-text">Farming</span></div>
+        <div class="cat-pill" data-cat="Driving" onclick="selectSinglePill(this,'post-category-pills')">🚗 <span class="cat-text">Driving</span></div>
+        <div class="cat-pill" data-cat="Cooking" onclick="selectSinglePill(this,'post-category-pills')">🍳 <span class="cat-text">Cooking</span></div>
+        <div class="cat-pill" data-cat="Teaching" onclick="selectSinglePill(this,'post-category-pills')">📚 <span class="cat-text">Teaching</span></div>
+        <div class="cat-pill" data-cat="General" onclick="selectSinglePill(this,'post-category-pills')">⚙️ <span class="cat-text">General</span></div>
+      </div>
+      <p id="post-cat-error" style="font-size:12px;color:#EF4444;margin-top:6px;display:none;"></p>
+    </div>
+    <div style="margin-bottom:14px;">
+      <p class="input-label" id="lbl-location">Your Location</p>
+      <div id="post-gps-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--input-bg);border-radius:10px;margin-bottom:10px;">
+        <span id="post-gps-icon">📡</span>
+        <span id="post-gps-text" style="font-size:12px;color:var(--text-secondary);"></span>
+        <button onclick="retryGPS()" id="btn-retry-gps" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--green);background:none;border:none;cursor:pointer;">Retry</button>
+      </div>
+      <div class="state-selector">
+        <button class="state-btn" id="post-ap-btn" onclick="jumpToState('post','AP')">📍 Andhra Pradesh</button>
+        <button class="state-btn" id="post-tn-btn" onclick="jumpToState('post','TN')">📍 Tamil Nadu</button>
+      </div>
+      <div style="position:relative;">
+        <div class="map-box-sm" id="map-post"></div>
+        <div class="map-loading" id="map-post-loading"><div class="map-loading-spinner"></div><p id="map-loading-text">Getting your location…</p></div>
+        <button class="map-locate-btn" onclick="retryGPS()" title="Use my GPS">📡</button>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;"><p class="input-label" id="lbl-urgency">Urgency</p>
+      <div class="toggle-container" id="post-urgency">
+        <div class="toggle-option active" id="urg-normal" onclick="selectToggle(this,this.parentElement)">Normal</div>
+        <div class="toggle-option" id="urg-urgent" onclick="selectToggle(this,this.parentElement)">Urgent</div>
+      </div>
+    </div>
+    <p id="post-desc-error" style="font-size:12px;color:#EF4444;margin-bottom:10px;display:none;"></p>
+    <button class="btn-primary" id="btn-post-request" onclick="submitPostRequest()">Post Request</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 8: BROWSE ══ -->
+<div class="screen" id="screen-browse">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+    <button class="back-btn" onclick="goTo('screen-home')">←</button>
+    <h2 id="browse-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Nearby Requests</h2>
+    <div id="browse-count-badge" style="margin-left:auto;background:var(--surface);border-radius:10px;padding:6px 12px;border:1px solid var(--border);display:none;"><span id="browse-count-text" style="font-size:12px;font-weight:600;color:var(--green);"></span></div>
+  </div>
+  <div style="padding:0 20px 10px;flex-shrink:0;overflow-x:auto;">
+    <div style="display:flex;gap:8px;min-width:max-content;" id="browse-filter-pills">
+      <div class="cat-pill selected" onclick="filterBrowse('all',this)" id="browse-all">All</div>
+      <div class="cat-pill" data-cat="Electrical" onclick="filterBrowse('Electrical',this)">⚡ <span class="cat-text">Electrical</span></div>
+      <div class="cat-pill" data-cat="Plumbing" onclick="filterBrowse('Plumbing',this)">🔧 <span class="cat-text">Plumbing</span></div>
+      <div class="cat-pill" data-cat="Farming" onclick="filterBrowse('Farming',this)">🌾 <span class="cat-text">Farming</span></div>
+      <div class="cat-pill" data-cat="Carpentry" onclick="filterBrowse('Carpentry',this)">🪚 <span class="cat-text">Carpentry</span></div>
+      <div class="cat-pill" data-cat="Driving" onclick="filterBrowse('Driving',this)">🚗 <span class="cat-text">Driving</span></div>
+      <div class="cat-pill" data-cat="Cooking" onclick="filterBrowse('Cooking',this)">🍳 <span class="cat-text">Cooking</span></div>
+      <div class="cat-pill" data-cat="Teaching" onclick="filterBrowse('Teaching',this)">📚 <span class="cat-text">Teaching</span></div>
+      <div class="cat-pill" data-cat="General" onclick="filterBrowse('General',this)">⚙️ <span class="cat-text">General</span></div>
+    </div>
+  </div>
+  <div class="scroll-content" style="padding:0 20px 80px;" id="browse-list"></div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label nav-t" data-key="nav_home">Home</span></div>
+    <div class="nav-item active"><span class="nav-icon">🔍</span><span class="nav-label nav-t" data-key="nav_browse">Browse</span></div>
+    <div class="nav-item" onclick="goTo('screen-post')"><div style="width:48px;height:48px;background:var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 12px rgba(15,169,88,0.4);"><span style="font-size:24px;color:#fff;">+</span></div><span class="nav-label nav-t" style="margin-top:2px;" data-key="nav_post">Post</span></div>
+    <div class="nav-item" onclick="goTo('screen-history')"><span class="nav-icon">📋</span><span class="nav-label nav-t" data-key="nav_history">History</span></div>
+    <div class="nav-item" onclick="goTo('screen-profile-view')"><span class="nav-icon">👤</span><span class="nav-label nav-t" data-key="nav_profile">Profile</span></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 9: DETAIL ══ -->
+<div class="screen" id="screen-detail">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border);">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <h2 id="detail-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Request Details</h2>
+  </div>
+  <div class="scroll-content" style="padding:16px 20px 90px;" id="detail-content"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 20px;background:#fff;border-top:1px solid var(--border);">
+    <button class="btn-primary" id="btn-accept" onclick="acceptJob()">Accept This Request</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 10: ACCEPTED ══ -->
+<div class="screen" id="screen-accepted">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border);">
+    <button class="back-btn" onclick="goTo('screen-home')">←</button>
+    <h2 id="accepted-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Job Accepted</h2>
+  </div>
+  <div class="scroll-content" style="padding:16px 20px 90px;" id="accepted-content"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 20px;background:#fff;border-top:1px solid var(--border);">
+    <button class="btn-primary" id="btn-mark-complete" onclick="goTo('screen-complete')">Mark as Completed</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 11: RATE ══ -->
+<div class="screen" id="screen-complete">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border);"><h2 id="rate-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Rate the Experience</h2></div>
+  <div class="scroll-content" style="padding:24px 20px;" id="complete-content"></div>
+</div>
+
+<!-- ══ SCREEN 12: NOTIFICATIONS ══ -->
+<div class="screen" id="screen-notif">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border);">
+    <button class="back-btn" onclick="goTo('screen-home')">←</button>
+    <h2 id="notif-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">Notifications</h2>
+  </div>
+  <div class="scroll-content" style="padding:14px 20px;" id="notif-list"></div>
+</div>
+
+<!-- ══ SCREEN 13: HISTORY ══ -->
+<div class="screen" id="screen-history">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div style="padding:14px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border);"><h2 id="history-title" style="font-size:18px;font-weight:700;color:var(--text-primary);">My History</h2></div>
+  <div style="padding:12px 20px 0;flex-shrink:0;">
+    <div class="toggle-container">
+      <div class="toggle-option active" id="hist-tab-req" onclick="selectToggle(this,this.parentElement);renderHistory('requests')">My Requests</div>
+      <div class="toggle-option" id="hist-tab-jobs" onclick="selectToggle(this,this.parentElement);renderHistory('jobs')">Jobs Done</div>
+    </div>
+  </div>
+  <div class="scroll-content" style="padding:14px 20px 80px;" id="history-list"></div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label nav-t" data-key="nav_home">Home</span></div>
+    <div class="nav-item" onclick="goTo('screen-browse')"><span class="nav-icon">🔍</span><span class="nav-label nav-t" data-key="nav_browse">Browse</span></div>
+    <div class="nav-item" onclick="goTo('screen-post')"><div style="width:48px;height:48px;background:var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 12px rgba(15,169,88,0.4);"><span style="font-size:24px;color:#fff;">+</span></div><span class="nav-label nav-t" style="margin-top:2px;" data-key="nav_post">Post</span></div>
+    <div class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label nav-t" data-key="nav_history">History</span></div>
+    <div class="nav-item" onclick="goTo('screen-profile-view')"><span class="nav-icon">👤</span><span class="nav-label nav-t" data-key="nav_profile">Profile</span></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 14: PROFILE VIEW ══ -->
+<div class="screen" id="screen-profile-view">
+  <div class="status-bar"><span class="status-time">9:41</span></div>
+  <div class="scroll-content" style="padding-bottom:80px;" id="profile-view-content"></div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span><span class="nav-label nav-t" data-key="nav_home">Home</span></div>
+    <div class="nav-item" onclick="goTo('screen-browse')"><span class="nav-icon">🔍</span><span class="nav-label nav-t" data-key="nav_browse">Browse</span></div>
+    <div class="nav-item" onclick="goTo('screen-post')"><div style="width:48px;height:48px;background:var(--green);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 12px rgba(15,169,88,0.4);"><span style="font-size:24px;color:#fff;">+</span></div><span class="nav-label nav-t" style="margin-top:2px;" data-key="nav_post">Post</span></div>
+    <div class="nav-item" onclick="goTo('screen-history')"><span class="nav-icon">📋</span><span class="nav-label nav-t" data-key="nav_history">History</span></div>
+    <div class="nav-item active"><span class="nav-icon">👤</span><span class="nav-label nav-t" data-key="nav_profile">Profile</span></div>
+  </div>
+</div>
+
+</div><!-- /phone-shell -->
+
+<script>window._leafletReady=false;window._leafletQ=[];function _onLeaflet(fn){if(window._leafletReady)fn();else window._leafletQ.push(fn);}function _leafletLoaded(){window._leafletReady=true;window._leafletQ.forEach(function(f){f();});window._leafletQ=[];}function _leafletFallback(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js';s.onload=_leafletLoaded;document.head.appendChild(s);}</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="_leafletLoaded()" onerror="_leafletFallback()"></script>
+
+<script>
+/* ══════════════════════════════════════════════
+   FULL TRANSLATION DICTIONARY — ALL 4 LANGUAGES
+══════════════════════════════════════════════ */
+var T = {
+  en: {
+    /* Lang screen */
+    lang_continue:'Continue',
+    /* Splash */
+    splash_title:'Connect your village', splash_sub:'Share skills, find help, and grow together.', splash_cta:'Get Started', splash_signin:'Already have an account?', splash_signin2:'Sign in',
+    /* Phone */
+    phone_title:'Enter your number', phone_sub:"We'll send you a verification code via SMS", lbl_name:'Full Name', lbl_phone:'Mobile Number', phone_cta:'Send OTP', phone_error:'Please enter your name and a valid 10-digit number.',
+    dual_role_title:'✅ Your account is dual-role', dual_role_sub:'You can both ask for help and offer your skills — switch anytime from the Home screen.',
+    /* OTP */
+    otp_title:'Verify your number', otp_sub:'Enter the 4-digit code sent to', demo_note:'Demo mode: enter any 4 digits to continue', otp_verify_btn:'Verify & Continue', otp_resend_q:"Didn't receive?", otp_resend_lnk:'Resend',
+    /* Profile setup */
+    profile_step:'OPTIONAL · STEP 2', profile_title:'Add your skills', profile_sub:'Fill this if you want to offer services. You can skip and do it later.',
+    lbl_occupation:'Occupation', ph_occupation:'e.g. Electrician, Plumber, Farmer',
+    lbl_about:'About your skills', ph_about:'Describe your experience...',
+    lbl_skills:'Select your skills', profile_save_btn:'Save & Go to Home', profile_skip_btn:'Skip for now →',
+    /* Home */
+    home_morning:'Hello 👋', lbl_need_help:'Need Help', lbl_offer_skills:'Offer Skills',
+    home_help_q:'What do you need help with?', home_post_btn:'Post a Request', home_post_ph:'Describe your problem...',
+    lbl_my_requests:'My Requests', lbl_see_all:'See all',
+    home_jobs_near:'Jobs near your area', home_browse_btn:'Browse Requests',
+    lbl_my_skills:'My Skills', lbl_edit:'Edit',
+    home_role_customer:'Customer', home_role_worker:'Worker',
+    no_active_requests:'No active requests.\nPost one to get started!',
+    no_skills:'No skills added yet.',
+    add_skills_link:'Add skills →',
+    /* Nav */
+    nav_home:'Home', nav_browse:'Browse', nav_post:'Post', nav_history:'History', nav_profile:'Profile',
+    /* Post */
+    post_title:'Post a Request', lbl_describe:'Describe your problem', lbl_category:'Category', lbl_location:'Your Location',
+    gps_fetching:'Fetching your GPS location…', gps_ok:'Location: ', gps_fail:'GPS unavailable. Showing Vijayawada, AP.',
+    btn_retry_gps:'Retry', map_loading_text:'Getting your location…',
+    lbl_urgency:'Urgency', urg_normal:'Normal', urg_urgent:'Urgent',
+    btn_post_request:'Post Request',
+    post_desc_error:'Please describe your problem.', post_cat_error:'Please select a category.',
+    post_success:'Request posted! Nearby workers notified.',
+    /* Category names */
+    cat_electrical:'Electrical', cat_plumbing:'Plumbing', cat_carpentry:'Carpentry', cat_farming:'Farming', cat_driving:'Driving', cat_cooking:'Cooking', cat_teaching:'Teaching', cat_general:'General',
+    /* Browse */
+    browse_title:'Nearby Requests', browse_all:'All', browse_available:'available', browse_empty:'No requests in this category right now.',
+    btn_accept_short:'Accept',
+    /* Detail */
+    detail_title:'Request Details', detail_exact_addr:'Exact address shared after you accept',
+    detail_info_location:'Location', detail_info_category:'Category', detail_info_status:'Status', detail_status_pending:'Pending',
+    btn_accept:'Accept This Request',
+    /* Accepted */
+    accepted_title:'Job Accepted', accepted_unlocked:'Full details are now unlocked', accepted_req_accepted:'Request Accepted!',
+    accepted_customer:'CUSTOMER DETAILS', accepted_problem:'Problem', accepted_address:'Full Address',
+    accepted_navigate:'Navigate to Location', btn_open_maps:'Open in Maps App',
+    btn_mark_complete:'Mark as Completed', open_maps_snack:'Opening navigation app…',
+    /* Rate */
+    rate_title:'Rate the Experience', rate_q:'How was the service?', rate_comment_lbl:'Leave a comment (optional)', rate_comment_ph:'How was the experience?',
+    review_quick:'Quick response', review_good:'Good work', review_friendly:'Friendly', review_professional:'Professional', review_ontime:'On time',
+    btn_submit_review:'Submit Review', btn_skip_review:'Skip for now', review_success:'Review submitted. Thank you!',
+    /* Notifications */
+    notif_title:'Notifications', notif_empty:'No notifications yet.', notif_accepted_job:'You accepted a job', notif_posted:'Request Posted', notif_posted_sub:'Visible to nearby workers',
+    /* History */
+    history_title:'My History', hist_tab_req:'My Requests', hist_tab_jobs:'Jobs Done',
+    hist_empty_req:'No requests posted yet.', hist_empty_jobs:'No jobs completed yet.',
+    /* Status labels */
+    status_pending:'Pending', status_accepted:'Accepted', status_completed:'Completed', status_cancelled:'Cancelled',
+    /* Profile view */
+    lbl_jobs_done:'Jobs Done', lbl_requests:'Requests', lbl_points:'Points',
+    lbl_edit_profile:'Edit Skills & Profile', lbl_change_lang:'Change Language', lbl_settings:'Settings', lbl_sign_out:'Sign Out',
+    settings_soon:'Settings coming soon', signed_out:'Signed out successfully.',
+    /* Misc */
+    just_now:'just now', min_ago:'min ago', hr_ago:'hr ago', day_ago:'day ago',
+  },
+
+  hi: {
+    lang_continue:'जारी रखें',
+    splash_title:'अपने गाँव को जोड़ें', splash_sub:'कौशल साझा करें, मदद पाएं, साथ मिलकर आगे बढ़ें।', splash_cta:'शुरू करें', splash_signin:'पहले से खाता है?', splash_signin2:'साइन इन करें',
+    phone_title:'अपना नंबर दर्ज करें', phone_sub:'हम SMS द्वारा OTP भेजेंगे', lbl_name:'पूरा नाम', lbl_phone:'मोबाइल नंबर', phone_cta:'OTP भेजें', phone_error:'कृपया अपना नाम और 10 अंकों का सही नंबर दर्ज करें।',
+    dual_role_title:'✅ आपका खाता दोहरी भूमिका वाला है', dual_role_sub:'आप मदद माँग सकते हैं और अपनी सेवाएं भी दे सकते हैं — होम स्क्रीन से कभी भी बदलें।',
+    otp_title:'नंबर सत्यापित करें', otp_sub:'4 अंकों का कोड दर्ज करें, भेजा गया', demo_note:'डेमो मोड: कोई भी 4 अंक दर्ज करें', otp_verify_btn:'सत्यापित करें', otp_resend_q:'कोड नहीं मिला?', otp_resend_lnk:'दोबारा भेजें',
+    profile_step:'वैकल्पिक · चरण 2', profile_title:'अपने कौशल जोड़ें', profile_sub:'यदि आप सेवाएं देना चाहते हैं तो भरें। आप इसे बाद में भी कर सकते हैं।',
+    lbl_occupation:'व्यवसाय', ph_occupation:'जैसे: इलेक्ट्रीशियन, प्लंबर, किसान',
+    lbl_about:'अपने कौशल के बारे में', ph_about:'अपना अनुभव बताएं...',
+    lbl_skills:'अपने कौशल चुनें', profile_save_btn:'सेव करें और होम पर जाएं', profile_skip_btn:'अभी छोड़ें →',
+    home_morning:'नमस्ते 👋', lbl_need_help:'मदद चाहिए', lbl_offer_skills:'सेवा दें',
+    home_help_q:'आपको किस चीज़ में मदद चाहिए?', home_post_btn:'अनुरोध पोस्ट करें', home_post_ph:'अपनी समस्या बताएं...',
+    lbl_my_requests:'मेरे अनुरोध', lbl_see_all:'सभी देखें',
+    home_jobs_near:'आपके क्षेत्र के पास काम', home_browse_btn:'अनुरोध देखें',
+    lbl_my_skills:'मेरे कौशल', lbl_edit:'संपादित करें',
+    home_role_customer:'ग्राहक', home_role_worker:'कामगार',
+    no_active_requests:'कोई सक्रिय अनुरोध नहीं।\nएक पोस्ट करें!',
+    no_skills:'कोई कौशल नहीं जोड़ा गया।',
+    add_skills_link:'कौशल जोड़ें →',
+    nav_home:'होम', nav_browse:'खोजें', nav_post:'पोस्ट', nav_history:'इतिहास', nav_profile:'प्रोफ़ाइल',
+    post_title:'अनुरोध पोस्ट करें', lbl_describe:'अपनी समस्या बताएं', lbl_category:'श्रेणी', lbl_location:'आपका स्थान',
+    gps_fetching:'GPS स्थान प्राप्त हो रहा है…', gps_ok:'स्थान: ', gps_fail:'GPS उपलब्ध नहीं। विजयवाड़ा, AP दिखाया जा रहा है।',
+    btn_retry_gps:'पुनः प्रयास', map_loading_text:'स्थान प्राप्त हो रहा है…',
+    lbl_urgency:'तात्कालिकता', urg_normal:'सामान्य', urg_urgent:'अत्यावश्यक',
+    btn_post_request:'अनुरोध पोस्ट करें',
+    post_desc_error:'कृपया अपनी समस्या बताएं।', post_cat_error:'कृपया एक श्रेणी चुनें।',
+    post_success:'अनुरोध पोस्ट हो गया! पास के कामगारों को सूचित किया गया।',
+    cat_electrical:'बिजली', cat_plumbing:'प्लंबिंग', cat_carpentry:'बढ़ईगीरी', cat_farming:'खेती', cat_driving:'ड्राइविंग', cat_cooking:'खाना पकाना', cat_teaching:'पढ़ाना', cat_general:'सामान्य',
+    browse_title:'पास के अनुरोध', browse_all:'सभी', browse_available:'उपलब्ध', browse_empty:'इस श्रेणी में अभी कोई अनुरोध नहीं है।',
+    btn_accept_short:'स्वीकार',
+    detail_title:'अनुरोध विवरण', detail_exact_addr:'स्वीकार करने के बाद पूरा पता साझा किया जाएगा',
+    detail_info_location:'स्थान', detail_info_category:'श्रेणी', detail_info_status:'स्थिति', detail_status_pending:'लंबित',
+    btn_accept:'यह अनुरोध स्वीकार करें',
+    accepted_title:'काम स्वीकृत', accepted_unlocked:'पूरी जानकारी अनलॉक हो गई है', accepted_req_accepted:'अनुरोध स्वीकार किया गया!',
+    accepted_customer:'ग्राहक विवरण', accepted_problem:'समस्या', accepted_address:'पूरा पता',
+    accepted_navigate:'स्थान तक पहुंचें', btn_open_maps:'मैप्स ऐप में खोलें',
+    btn_mark_complete:'पूर्ण के रूप में चिह्नित करें', open_maps_snack:'नेविगेशन ऐप खुल रहा है…',
+    rate_title:'अनुभव रेट करें', rate_q:'सेवा कैसी थी?', rate_comment_lbl:'टिप्पणी (वैकल्पिक)', rate_comment_ph:'अनुभव कैसा था?',
+    review_quick:'त्वरित प्रतिक्रिया', review_good:'अच्छा काम', review_friendly:'मिलनसार', review_professional:'पेशेवर', review_ontime:'समय पर',
+    btn_submit_review:'समीक्षा सबमिट करें', btn_skip_review:'अभी छोड़ें', review_success:'समीक्षा सबमिट की गई। धन्यवाद!',
+    notif_title:'सूचनाएं', notif_empty:'अभी कोई सूचना नहीं है।', notif_accepted_job:'आपने एक काम स्वीकार किया', notif_posted:'अनुरोध पोस्ट किया गया', notif_posted_sub:'पास के कामगारों को दिखाई दे रहा है',
+    history_title:'मेरा इतिहास', hist_tab_req:'मेरे अनुरोध', hist_tab_jobs:'किए गए काम',
+    hist_empty_req:'अभी तक कोई अनुरोध पोस्ट नहीं किया।', hist_empty_jobs:'अभी तक कोई काम पूरा नहीं किया।',
+    status_pending:'लंबित', status_accepted:'स्वीकृत', status_completed:'पूर्ण', status_cancelled:'रद्द',
+    lbl_jobs_done:'किए गए काम', lbl_requests:'अनुरोध', lbl_points:'अंक',
+    lbl_edit_profile:'कौशल और प्रोफ़ाइल संपादित करें', lbl_change_lang:'भाषा बदलें', lbl_settings:'सेटिंग्स', lbl_sign_out:'साइन आउट',
+    settings_soon:'सेटिंग्स जल्द आएगी', signed_out:'सफलतापूर्वक साइन आउट हो गए।',
+    just_now:'अभी', min_ago:'मिनट पहले', hr_ago:'घंटे पहले', day_ago:'दिन पहले',
+  },
+
+  te: {
+    lang_continue:'కొనసాగించు',
+    splash_title:'మీ గ్రామాన్ని అనుసంధానించండి', splash_sub:'నైపుణ్యాలు పంచుకోండి, సహాయం పొందండి, కలిసి ఎదగండి.', splash_cta:'ప్రారంభించండి', splash_signin:'ఖాతా ఉందా?', splash_signin2:'సైన్ ఇన్ చేయండి',
+    phone_title:'మీ నంబర్ నమోదు చేయండి', phone_sub:'మేము SMS ద్వారా OTP పంపుతాము', lbl_name:'పూర్తి పేరు', lbl_phone:'మొబైల్ నంబర్', phone_cta:'OTP పంపండి', phone_error:'దయచేసి మీ పేరు మరియు 10 అంకెల నంబర్ నమోదు చేయండి.',
+    dual_role_title:'✅ మీ ఖాతా ద్వంద్వ పాత్ర కలది', dual_role_sub:'మీరు సహాయం అడగవచ్చు మరియు నైపుణ్యాలు అందించవచ్చు — హోమ్ స్క్రీన్ నుండి మారండి.',
+    otp_title:'నంబర్ ధృవీకరించండి', otp_sub:'పంపిన 4 అంకెల కోడ్ నమోదు చేయండి', demo_note:'డెమో మోడ్: ఏదైనా 4 అంకెలు నమోదు చేయండి', otp_verify_btn:'ధృవీకరించండి', otp_resend_q:'కోడ్ రాలేదా?', otp_resend_lnk:'మళ్ళీ పంపండి',
+    profile_step:'ఐచ్ఛికం · దశ 2', profile_title:'మీ నైపుణ్యాలు జోడించండి', profile_sub:'సేవలు అందించాలంటే పూరించండి. తర్వాత చేయవచ్చు.',
+    lbl_occupation:'వృత్తి', ph_occupation:'ఉదా: ఎలక్ట్రీషియన్, ప్లంబర్, రైతు',
+    lbl_about:'నైపుణ్యాల గురించి', ph_about:'మీ అనుభవం వివరించండి...',
+    lbl_skills:'నైపుణ్యాలు ఎంచుకోండి', profile_save_btn:'సేవ్ చేసి హోమ్‌కు వెళ్ళండి', profile_skip_btn:'ఇప్పుడు వదిలేయి →',
+    home_morning:'నమస్కారం 👋', lbl_need_help:'సహాయం కావాలి', lbl_offer_skills:'సేవ అందించు',
+    home_help_q:'మీకు ఏ విషయంలో సహాయం కావాలి?', home_post_btn:'అభ్యర్థన పోస్ట్ చేయండి', home_post_ph:'మీ సమస్య వివరించండి...',
+    lbl_my_requests:'నా అభ్యర్థనలు', lbl_see_all:'అన్నీ చూడండి',
+    home_jobs_near:'మీ ప్రాంతంలో పని', home_browse_btn:'అభ్యర్థనలు చూడండి',
+    lbl_my_skills:'నా నైపుణ్యాలు', lbl_edit:'సవరించు',
+    home_role_customer:'కస్టమర్', home_role_worker:'వర్కర్',
+    no_active_requests:'చురుకైన అభ్యర్థనలు లేవు.\nఒకటి పోస్ట్ చేయండి!',
+    no_skills:'నైపుణ్యాలు జోడించబడలేదు.',
+    add_skills_link:'నైపుణ్యాలు జోడించు →',
+    nav_home:'హోమ్', nav_browse:'వెతకండి', nav_post:'పోస్ట్', nav_history:'చరిత్ర', nav_profile:'ప్రొఫైల్',
+    post_title:'అభ్యర్థన పోస్ట్ చేయండి', lbl_describe:'మీ సమస్య వివరించండి', lbl_category:'వర్గం', lbl_location:'మీ స్థానం',
+    gps_fetching:'GPS స్థానం తీసుకుంటున్నాం…', gps_ok:'స్థానం: ', gps_fail:'GPS అందుబాటులో లేదు. విజయవాడ, AP చూపిస్తున్నాం.',
+    btn_retry_gps:'మళ్ళీ ప్రయత్నించు', map_loading_text:'స్థానం తీసుకుంటున్నాం…',
+    lbl_urgency:'అత్యవసరత', urg_normal:'సాధారణ', urg_urgent:'అత్యవసర',
+    btn_post_request:'అభ్యర్థన పోస్ట్ చేయండి',
+    post_desc_error:'దయచేసి మీ సమస్య వివరించండి.', post_cat_error:'దయచేసి వర్గం ఎంచుకోండి.',
+    post_success:'అభ్యర్థన పోస్ట్ అయింది! సమీప వర్కర్లకు తెలియజేయబడింది.',
+    cat_electrical:'విద్యుత్', cat_plumbing:'ప్లంబింగ్', cat_carpentry:'వడ్రంగి', cat_farming:'వ్యవసాయం', cat_driving:'డ్రైవింగ్', cat_cooking:'వంట', cat_teaching:'బోధన', cat_general:'సాధారణ',
+    browse_title:'సమీప అభ్యర్థనలు', browse_all:'అన్నీ', browse_available:'అందుబాటులో', browse_empty:'ఈ వర్గంలో ప్రస్తుతం అభ్యర్థనలు లేవు.',
+    btn_accept_short:'అంగీకరించు',
+    detail_title:'అభ్యర్థన వివరాలు', detail_exact_addr:'అంగీకరించిన తర్వాత పూర్తి చిరునామా పంచుకోబడుతుంది',
+    detail_info_location:'స్థానం', detail_info_category:'వర్గం', detail_info_status:'స్థితి', detail_status_pending:'పెండింగ్',
+    btn_accept:'ఈ అభ్యర్థన అంగీకరించు',
+    accepted_title:'పని అంగీకరించబడింది', accepted_unlocked:'పూర్తి వివరాలు అన్‌లాక్ అయ్యాయి', accepted_req_accepted:'అభ్యర్థన అంగీకరించబడింది!',
+    accepted_customer:'కస్టమర్ వివరాలు', accepted_problem:'సమస్య', accepted_address:'పూర్తి చిరునామా',
+    accepted_navigate:'స్థానానికి నావిగేట్ చేయండి', btn_open_maps:'మ్యాప్స్ యాప్‌లో తెరవండి',
+    btn_mark_complete:'పూర్తయినట్లు గుర్తించు', open_maps_snack:'నావిగేషన్ యాప్ తెరుచుకుంటోంది…',
+    rate_title:'అనుభవాన్ని రేట్ చేయండి', rate_q:'సేవ ఎలా ఉంది?', rate_comment_lbl:'వ్యాఖ్య (ఐచ్ఛికం)', rate_comment_ph:'అనుభవం ఎలా ఉంది?',
+    review_quick:'త్వరిత స్పందన', review_good:'మంచి పని', review_friendly:'స్నేహపూర్వక', review_professional:'వృత్తిపరమైన', review_ontime:'సమయానికి',
+    btn_submit_review:'సమీక్ష సమర్పించు', btn_skip_review:'ఇప్పుడు వదిలేయి', review_success:'సమీక్ష సమర్పించబడింది. ధన్యవాదాలు!',
+    notif_title:'నోటిఫికేషన్లు', notif_empty:'ఇంకా నోటిఫికేషన్లు లేవు.', notif_accepted_job:'మీరు పనిని అంగీకరించారు', notif_posted:'అభ్యర్థన పోస్ట్ చేయబడింది', notif_posted_sub:'సమీప వర్కర్లకు కనిపిస్తోంది',
+    history_title:'నా చరిత్ర', hist_tab_req:'నా అభ్యర్థనలు', hist_tab_jobs:'చేసిన పనులు',
+    hist_empty_req:'ఇంకా అభ్యర్థనలు పోస్ట్ చేయలేదు.', hist_empty_jobs:'ఇంకా పనులు పూర్తి చేయలేదు.',
+    status_pending:'పెండింగ్', status_accepted:'అంగీకరించబడింది', status_completed:'పూర్తయింది', status_cancelled:'రద్దు చేయబడింది',
+    lbl_jobs_done:'చేసిన పనులు', lbl_requests:'అభ్యర్థనలు', lbl_points:'పాయింట్లు',
+    lbl_edit_profile:'నైపుణ్యాలు & ప్రొఫైల్ సవరించు', lbl_change_lang:'భాష మార్చు', lbl_settings:'సెట్టింగ్లు', lbl_sign_out:'సైన్ అవుట్',
+    settings_soon:'సెట్టింగ్లు త్వరలో వస్తాయి', signed_out:'విజయవంతంగా సైన్ అవుట్ అయ్యారు.',
+    just_now:'ఇప్పుడే', min_ago:'నిమిషాల క్రితం', hr_ago:'గంటల క్రితం', day_ago:'రోజుల క్రితం',
+  },
+
+  ta: {
+    lang_continue:'தொடரவும்',
+    splash_title:'உங்கள் கிராமத்தை இணைக்கவும்', splash_sub:'திறன்களை பகிரவும், உதவி பெறவும், ஒன்றாக வளரவும்.', splash_cta:'தொடங்கவும்', splash_signin:'ஏற்கனவே கணக்கு உளதா?', splash_signin2:'உள்நுழையவும்',
+    phone_title:'உங்கள் எண்ணை உள்ளிடவும்', phone_sub:'நாங்கள் SMS மூலம் OTP அனுப்புவோம்', lbl_name:'முழு பெயர்', lbl_phone:'மொபைல் எண்', phone_cta:'OTP அனுப்பவும்', phone_error:'உங்கள் பெயரையும் சரியான 10 இலக்க எண்ணையும் உள்ளிடவும்.',
+    dual_role_title:'✅ உங்கள் கணக்கு இரட்டை பாத்திரம் கொண்டது', dual_role_sub:'நீங்கள் உதவி கேட்கலாம் மற்றும் திறன்களை வழங்கலாம் — முகப்பு திரையில் இருந்து மாறவும்.',
+    otp_title:'எண்ணை சரிபார்க்கவும்', otp_sub:'அனுப்பப்பட்ட 4 இலக்க குறியீட்டை உள்ளிடவும்', demo_note:'டெமோ முறை: எந்த 4 இலக்கங்களையும் உள்ளிடவும்', otp_verify_btn:'சரிபார்க்கவும்', otp_resend_q:'குறியீடு கிடைக்கவில்லையா?', otp_resend_lnk:'மீண்டும் அனுப்பவும்',
+    profile_step:'விருப்பமான · படி 2', profile_title:'உங்கள் திறன்களை சேர்க்கவும்', profile_sub:'சேவைகளை வழங்க விரும்பினால் நிரப்பவும். பின்னர் செய்யலாம்.',
+    lbl_occupation:'தொழில்', ph_occupation:'எ.கா: மின்சாரவாதி, குழாய் திருத்துபவர், விவசாயி',
+    lbl_about:'திறன்களைப் பற்றி', ph_about:'உங்கள் அனுபவத்தை விவரிக்கவும்...',
+    lbl_skills:'திறன்களை தேர்வு செய்க', profile_save_btn:'சேமித்து முகப்புக்கு செல்லவும்', profile_skip_btn:'இப்போது தவிர்க்கவும் →',
+    home_morning:'வணக்கம் 👋', lbl_need_help:'உதவி வேண்டும்', lbl_offer_skills:'சேவை வழங்க',
+    home_help_q:'உங்களுக்கு எதில் உதவி வேண்டும்?', home_post_btn:'கோரிக்கை இடுக', home_post_ph:'உங்கள் பிரச்சனையை விவரிக்கவும்...',
+    lbl_my_requests:'என் கோரிக்கைகள்', lbl_see_all:'அனைத்தும் காண்க',
+    home_jobs_near:'உங்கள் பகுதியில் வேலைகள்', home_browse_btn:'கோரிக்கைகளை பார்க்கவும்',
+    lbl_my_skills:'என் திறன்கள்', lbl_edit:'திருத்தவும்',
+    home_role_customer:'வாடிக்கையாளர்', home_role_worker:'தொழிலாளி',
+    no_active_requests:'செயலில் உள்ள கோரிக்கைகள் இல்லை.\nஒன்றை இடுங்கள்!',
+    no_skills:'திறன்கள் எதுவும் சேர்க்கப்படவில்லை.',
+    add_skills_link:'திறன்கள் சேர்க்கவும் →',
+    nav_home:'முகப்பு', nav_browse:'தேடவும்', nav_post:'இடுக', nav_history:'வரலாறு', nav_profile:'சுயவிவரம்',
+    post_title:'கோரிக்கை இடுக', lbl_describe:'உங்கள் பிரச்சனையை விவரிக்கவும்', lbl_category:'வகை', lbl_location:'உங்கள் இடம்',
+    gps_fetching:'GPS இருப்பிடம் பெறப்படுகிறது…', gps_ok:'இடம்: ', gps_fail:'GPS கிடைக்கவில்லை. விஜயவாடா, AP காட்டப்படுகிறது.',
+    btn_retry_gps:'மீண்டும் முயற்சி', map_loading_text:'இருப்பிடம் பெறப்படுகிறது…',
+    lbl_urgency:'அவசரம்', urg_normal:'சாதாரண', urg_urgent:'அவசர',
+    btn_post_request:'கோரிக்கை இடுக',
+    post_desc_error:'உங்கள் பிரச்சனையை விவரிக்கவும்.', post_cat_error:'ஒரு வகையை தேர்வு செய்யவும்.',
+    post_success:'கோரிக்கை இடப்பட்டது! அருகிலுள்ள தொழிலாளர்களுக்கு அறிவிக்கப்பட்டது.',
+    cat_electrical:'மின்சாரம்', cat_plumbing:'குழாய் பணி', cat_carpentry:'மரவேலை', cat_farming:'விவசாயம்', cat_driving:'வாகனம் ஓட்டுதல்', cat_cooking:'சமையல்', cat_teaching:'கற்பித்தல்', cat_general:'பொது',
+    browse_title:'அருகிலுள்ள கோரிக்கைகள்', browse_all:'அனைத்தும்', browse_available:'கிடைக்கின்றன', browse_empty:'இந்த வகையில் இப்போது கோரிக்கைகள் இல்லை.',
+    btn_accept_short:'ஏற்கவும்',
+    detail_title:'கோரிக்கை விவரங்கள்', detail_exact_addr:'ஏற்றுக்கொண்ட பிறகு முழு முகவரி பகிரப்படும்',
+    detail_info_location:'இடம்', detail_info_category:'வகை', detail_info_status:'நிலை', detail_status_pending:'நிலுவையில்',
+    btn_accept:'இந்த கோரிக்கையை ஏற்கவும்',
+    accepted_title:'வேலை ஏற்கப்பட்டது', accepted_unlocked:'முழு விவரங்கள் திறக்கப்பட்டன', accepted_req_accepted:'கோரிக்கை ஏற்கப்பட்டது!',
+    accepted_customer:'வாடிக்கையாளர் விவரங்கள்', accepted_problem:'பிரச்சனை', accepted_address:'முழு முகவரி',
+    accepted_navigate:'இடத்திற்கு செல்லவும்', btn_open_maps:'வரைபட பயன்பாட்டில் திறக்கவும்',
+    btn_mark_complete:'முடிந்தது என்று குறிக்கவும்', open_maps_snack:'வழிசெலுத்தல் பயன்பாடு திறக்கிறது…',
+    rate_title:'அனுபவத்தை மதிப்பிடவும்', rate_q:'சேவை எப்படி இருந்தது?', rate_comment_lbl:'கருத்து (விருப்பமானது)', rate_comment_ph:'அனுபவம் எப்படி இருந்தது?',
+    review_quick:'விரைவான பதில்', review_good:'நல்ல வேலை', review_friendly:'நட்பான', review_professional:'தொழில்முறை', review_ontime:'சரியான நேரத்தில்',
+    btn_submit_review:'மதிப்பாய்வை சமர்ப்பிக்கவும்', btn_skip_review:'இப்போது தவிர்க்கவும்', review_success:'மதிப்பாய்வு சமர்ப்பிக்கப்பட்டது. நன்றி!',
+    notif_title:'அறிவிப்புகள்', notif_empty:'இன்னும் அறிவிப்புகள் இல்லை.', notif_accepted_job:'நீங்கள் ஒரு வேலையை ஏற்றீர்கள்', notif_posted:'கோரிக்கை இடப்பட்டது', notif_posted_sub:'அருகிலுள்ள தொழிலாளர்களுக்கு தெரிகிறது',
+    history_title:'என் வரலாறு', hist_tab_req:'என் கோரிக்கைகள்', hist_tab_jobs:'செய்த வேலைகள்',
+    hist_empty_req:'இன்னும் கோரிக்கைகள் இடப்படவில்லை.', hist_empty_jobs:'இன்னும் வேலைகள் முடிக்கப்படவில்லை.',
+    status_pending:'நிலுவையில்', status_accepted:'ஏற்கப்பட்டது', status_completed:'முடிந்தது', status_cancelled:'ரத்து செய்யப்பட்டது',
+    lbl_jobs_done:'செய்த வேலைகள்', lbl_requests:'கோரிக்கைகள்', lbl_points:'புள்ளிகள்',
+    lbl_edit_profile:'திறன்கள் & சுயவிவரத்தை திருத்தவும்', lbl_change_lang:'மொழியை மாற்றவும்', lbl_settings:'அமைப்புகள்', lbl_sign_out:'வெளியேறவும்',
+    settings_soon:'அமைப்புகள் விரைவில் வரும்', signed_out:'வெற்றிகரமாக வெளியேறினீர்கள்.',
+    just_now:'இப்போதே', min_ago:'நிமிடங்களுக்கு முன்', hr_ago:'மணி நேரங்களுக்கு முன்', day_ago:'நாட்களுக்கு முன்',
+  }
+};
+
+/* ══════════════════════════════════════════════
+   APP STATE
+══════════════════════════════════════════════ */
+var lang = 'en';
+var currentScreen='screen-lang', prevScreen=null, snackTimer;
+var currentBrowseFilter='all', selectedDetailIndex=null, acceptedJobIndex=null;
+var activeHomeRole='customer';
+var gps=null;
+var maps={};
+
+var user={name:'',phone:'',initials:'',occupation:'',about:'',skills:[],jobsDone:0,points:0};
+var myRequests=[];
+var acceptedJobs=[];
+
+/* Translation cache so we don't re-call the API for the same text+lang combo */
+var txCache={};
+
+var STATE_CENTRES={
+  AP:{lat:16.5062,lng:80.6480,zoom:11,label:'Vijayawada, AP'},
+  TN:{lat:13.0827,lng:80.2707,zoom:11,label:'Chennai, TN'}
+};
+
+/* Category key → English canonical name */
+var CAT_KEYS={
+  'Electrical':'cat_electrical','Plumbing':'cat_plumbing','Carpentry':'cat_carpentry',
+  'Farming':'cat_farming','Driving':'cat_driving','Cooking':'cat_cooking',
+  'Teaching':'cat_teaching','General':'cat_general'
+};
+var CAT_EMOJI={Electrical:'⚡',Plumbing:'🔧',Carpentry:'🪚',Farming:'🌾',Driving:'🚗',Cooking:'🍳',Teaching:'📚',General:'⚙️'};
+
+var seedRequests=[
+  {id:'s1',owner:'Suresh K.',ownerInit:'SK',ownerColor:'#0FA958',phone:'87654 32109',desc:'Short circuit in my kitchen. Lights stopped working after heavy rain. Need urgent help.',category:'Electrical',urgency:'Urgent',lat:16.3067,lng:80.4365,locationLabel:'Guntur, AP',time:Date.now()-7200000,status:'Pending',accepted:false},
+  {id:'s2',owner:'Priya M.',ownerInit:'PM',ownerColor:'#0EA5A4',phone:'91234 56780',desc:'Main water pipe near entrance is leaking badly. Water wasting since morning.',category:'Plumbing',urgency:'Urgent',lat:9.9252,lng:78.1198,locationLabel:'Madurai, TN',time:Date.now()-18000000,status:'Pending',accepted:false},
+  {id:'s3',owner:'Mohan R.',ownerInit:'MR',ownerColor:'#F59E0B',phone:'98765 11223',desc:'Need 2-3 people to help with rice paddy harvest this Saturday and Sunday.',category:'Farming',urgency:'Normal',lat:15.8281,lng:78.0373,locationLabel:'Kurnool, AP',time:Date.now()-86400000,status:'Pending',accepted:false},
+  {id:'s4',owner:'Lakshmi D.',ownerInit:'LD',ownerColor:'#8B5CF6',phone:'99887 76655',desc:'Wooden doors in my house are broken. Need a good carpenter for repair work.',category:'Carpentry',urgency:'Normal',lat:11.0168,lng:76.9558,locationLabel:'Coimbatore, TN',time:Date.now()-10800000,status:'Pending',accepted:false},
+  {id:'s5',owner:'Venkat N.',ownerInit:'VN',ownerColor:'#EC4899',phone:'80001 22334',desc:'Need a driver for 3 days to transport vegetables from farm to market in Vijayawada.',category:'Driving',urgency:'Normal',lat:16.5062,lng:80.6480,locationLabel:'Vijayawada, AP',time:Date.now()-3600000,status:'Pending',accepted:false},
+  {id:'s6',owner:'Anitha S.',ownerInit:'AS',ownerColor:'#0EA5A4',phone:'77889 90011',desc:'Looking for a cook to prepare food for a family function. Around 50 people.',category:'Cooking',urgency:'Normal',lat:10.7905,lng:78.7047,locationLabel:'Tiruchirappalli, TN',time:Date.now()-21600000,status:'Pending',accepted:false},
+  {id:'s7',owner:'Raju P.',ownerInit:'RP',ownerColor:'#F59E0B',phone:'90011 23456',desc:'My children need tuition in Maths and Science for 9th standard. Evening batches preferred.',category:'Teaching',urgency:'Normal',lat:14.4426,lng:79.9865,locationLabel:'Nellore, AP',time:Date.now()-43200000,status:'Pending',accepted:false},
+  {id:'s8',owner:'Meena T.',ownerInit:'MT',ownerColor:'#0FA958',phone:'81122 33445',desc:'Gate latch and boundary wall needs repair. General handyman work needed.',category:'General',urgency:'Normal',lat:8.7139,lng:77.7567,locationLabel:'Tirunelveli, TN',time:Date.now()-900000,status:'Pending',accepted:false},
+];
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function t(key){ return (T[lang]&&T[lang][key])||T.en[key]||key; }
+function makeInitials(n){var p=n.trim().split(/\s+/);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():n.trim().slice(0,2).toUpperCase();}
+function timeAgo(ts){
+  var d=Date.now()-ts,m=Math.floor(d/60000);
+  if(m<1)return t('just_now');
+  if(m<60)return m+' '+t('min_ago');
+  var hr=Math.floor(m/60);
+  return hr<24?hr+' '+t('hr_ago'):Math.floor(hr/24)+' '+t('day_ago');
+}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function h(s){return escHtml(s);}
+function setText(id,val){var e=document.getElementById(id);if(e)e.textContent=val;}
+function setPlaceholder(id,val){var e=document.getElementById(id);if(e)e.placeholder=val;}
+function showSnack(msg){var sb=document.getElementById('snackbar');sb.textContent=msg;sb.classList.add('show');clearTimeout(snackTimer);snackTimer=setTimeout(function(){sb.classList.remove('show');},2800);}
+function showLoading(id,v){var e=document.getElementById(id);if(e)e.style.display=v?'flex':'none';}
+function catName(cat){return t(CAT_KEYS[cat])||cat;}
+function catLabel(cat){return(CAT_EMOJI[cat]||'')+' '+catName(cat);}
+function statusLabel(s){
+  if(s==='Pending')return t('status_pending');
+  if(s==='Accepted')return t('status_accepted');
+  if(s==='Completed')return t('status_completed');
+  if(s==='Cancelled')return t('status_cancelled');
+  return s;
+}
+
+/* ══════════════════════════════════════════════
+   AI TRANSLATION  (Anthropic API)
+   Translates a batch of strings to the target language.
+   Returns promise resolving to array of translated strings.
+══════════════════════════════════════════════ */
+function aiTranslate(texts, targetLang, callback){
+  if(targetLang==='en'){callback(texts);return;}
+  var langNames={hi:'Hindi',te:'Telugu',ta:'Tamil'};
+  var langName=langNames[targetLang]||'Hindi';
+  var cacheKey=targetLang+'::'+texts.join('|||');
+  if(txCache[cacheKey]){callback(txCache[cacheKey]);return;}
+  var prompt='Translate each of the following texts into '+langName+'. Return ONLY a JSON array of translated strings in the same order, with no extra text, explanation, or markdown.\n\nTexts:\n'+JSON.stringify(texts);
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    try{
+      var raw=data.content[0].text.replace(/```json|```/g,'').trim();
+      var result=JSON.parse(raw);
+      txCache[cacheKey]=result;
+      callback(result);
+    }catch(e){callback(texts);}
+  })
+  .catch(function(){callback(texts);});
+}
+
+/* Translate a single request's desc field and cache it on the object */
+function translateRequestDesc(r, callback){
+  if(lang==='en'){callback(r.desc);return;}
+  var cacheField='desc_'+lang;
+  if(r[cacheField]){callback(r[cacheField]);return;}
+  aiTranslate([r.desc], lang, function(arr){
+    r[cacheField]=arr[0]||r.desc;
+    callback(r[cacheField]);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   APPLY LANGUAGE — updates every static element on all screens
+══════════════════════════════════════════════ */
+function applyLanguage(code){
+  lang=code;
+  /* Screen 1 */
+  setText('lang-continue-btn',t('lang_continue'));
+  /* Screen 2 */
+  setText('splash-title',t('splash_title'));setText('splash-sub',t('splash_sub'));
+  setText('splash-cta',t('splash_cta'));setText('splash-signin',t('splash_signin'));setText('splash-signin2',t('splash_signin2'));
+  /* Screen 3 */
+  setText('phone-title',t('phone_title'));setText('phone-sub',t('phone_sub'));
+  setText('lbl-name',t('lbl_name'));setText('lbl-phone',t('lbl_phone'));setText('phone-cta',t('phone_cta'));
+  setText('dual-role-title',t('dual_role_title'));setText('dual-role-sub',t('dual_role_sub'));
+  setPlaceholder('input-name',code==='en'?'Your full name':code==='hi'?'आपका पूरा नाम':code==='te'?'మీ పూర్తి పేరు':'உங்கள் முழு பெயர்');
+  /* Screen 4 */
+  setText('otp-title',t('otp_title'));setText('otp-sub',t('otp_sub'));
+  setText('demo-note',t('demo_note'));setText('otp-verify-btn',t('otp_verify_btn'));
+  setText('otp-resend-q',t('otp_resend_q'));setText('otp-resend-lnk',t('otp_resend_lnk'));
+  /* Screen 5 */
+  setText('profile-step',t('profile_step'));setText('profile-title',t('profile_title'));setText('profile-sub',t('profile_sub'));
+  setText('lbl-occupation',t('lbl_occupation'));setText('lbl-about',t('lbl_about'));setText('lbl-skills',t('lbl_skills'));
+  setText('profile-save-btn',t('profile_save_btn'));setText('profile-skip-btn',t('profile_skip_btn'));
+  setPlaceholder('input-occupation',t('ph_occupation'));setPlaceholder('input-about',t('ph_about'));
+  /* Skill pills on profile screen */
+  var skillKeys=['Electrical','Plumbing','Carpentry','Farming','Driving','Cooking','Teaching','General'];
+  document.querySelectorAll('#skill-pills .cat-pill').forEach(function(p,i){p.textContent=(CAT_EMOJI[skillKeys[i]]||'')+' '+catName(skillKeys[i]);});
+  /* Screen 6: Home */
+  setText('home-morning',t('home_morning'));
+  setText('lbl-need-help',t('lbl_need_help'));setText('lbl-offer-skills',t('lbl_offer_skills'));
+  setText('home-help-q',t('home_help_q'));setText('home-post-btn',t('home_post_btn'));setText('home-post-ph',t('home_post_ph'));
+  setText('lbl-my-requests',t('lbl_my_requests'));setText('lbl-see-all',t('lbl_see_all'));
+  setText('home-jobs-near',t('home_jobs_near'));setText('home-browse-btn',t('home_browse_btn'));
+  setText('lbl-my-skills',t('lbl_my_skills'));setText('lbl-edit',t('lbl_edit'));
+  setText('home-role-badge',activeHomeRole==='customer'?t('home_role_customer'):t('home_role_worker'));
+  /* Nav */
+  setText('nav-home',t('nav_home'));setText('nav-browse',t('nav_browse'));setText('nav-post',t('nav_post'));
+  setText('nav-history',t('nav_history'));setText('nav-profile',t('nav_profile'));
+  /* Screen 7: Post */
+  setText('post-title',t('post_title'));setText('lbl-describe',t('lbl_describe'));
+  setText('lbl-category',t('lbl_category'));setText('lbl-location',t('lbl_location'));
+  setText('btn-retry-gps',t('btn_retry_gps'));setText('map-loading-text',t('map_loading_text'));
+  setText('lbl-urgency',t('lbl_urgency'));
+  setText('urg-normal',t('urg_normal'));setText('urg-urgent',t('urg_urgent'));
+  setText('btn-post-request',t('btn_post_request'));
+  setPlaceholder('post-description',t('ph_about'));
+  /* Category pills — post & browse use data-cat attr */
+  document.querySelectorAll('[data-cat]').forEach(function(p){
+    var cat=p.getAttribute('data-cat');
+    var span=p.querySelector('.cat-text');
+    if(span)span.textContent=catName(cat);
+  });
+  setText('browse-all',t('browse_all'));
+  /* Screen 8: Browse */
+  setText('browse-title',t('browse_title'));
+  /* Screen 9: Detail */
+  setText('detail-title',t('detail_title'));setText('btn-accept',t('btn_accept'));
+  /* Screen 10: Accepted */
+  setText('accepted-title',t('accepted_title'));setText('btn-mark-complete',t('btn_mark_complete'));
+  /* Screen 11: Rate */
+  setText('rate-title',t('rate_title'));
+  /* Screen 12: Notifications */
+  setText('notif-title',t('notif_title'));
+  /* Screen 13: History */
+  setText('history-title',t('history_title'));
+  setText('hist-tab-req',t('hist_tab_req'));setText('hist-tab-jobs',t('hist_tab_jobs'));
+  /* Sweep ALL nav labels across every screen using data-key */
+  document.querySelectorAll('.nav-t[data-key]').forEach(function(el){
+    el.textContent=t(el.getAttribute('data-key'));
+  });
+  /* Re-render any open dynamic screen */
+  if(currentScreen==='screen-home') renderHome();
+  if(currentScreen==='screen-browse') renderBrowse();
+  if(currentScreen==='screen-history') renderHistory('requests');
+  if(currentScreen==='screen-profile-view') renderProfileView();
+  if(currentScreen==='screen-notif') renderNotifications();
+}
+
+function selectLang(el,code){
+  ['en','hi','te','ta'].forEach(function(c){var l=document.getElementById('lck-'+c);if(l)l.style.color='transparent';});
+  document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.remove('selected');});
+  el.classList.add('selected');
+  var lck=document.getElementById('lck-'+code);if(lck)lck.style.color='var(--green)';
+  applyLanguage(code);
+}
+
+/* ══════════════════════════════════════════════
+   MAP ENGINE
+══════════════════════════════════════════════ */
+function destroyMap(elId){if(maps[elId]){try{maps[elId].remove();}catch(e){}delete maps[elId];}var el=document.getElementById(elId);if(el)el.innerHTML='';}
+function buildMap(elId,lat,lng,zoom,opts){
+  opts=opts||{};
+  if(!window._leafletReady){showSnack('Map library not loaded.');return;}
+  destroyMap(elId);
+  var el=document.getElementById(elId);if(!el)return;
+  var m=L.map(el,{zoomControl:true,attributionControl:false,dragging:true,scrollWheelZoom:true,doubleClickZoom:true,touchZoom:true}).setView([lat,lng],zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+  var gPin=L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#0FA958;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>',iconSize:[22,22],iconAnchor:[11,11]});
+  L.marker([lat,lng],{icon:gPin}).addTo(m).bindPopup(opts.label||'').openPopup();
+  if(opts.withRoute){
+    var wLat=lat+0.009*(Math.random()>0.5?1:-1),wLng=lng+0.008*(Math.random()>0.5?1:-1);
+    var tPin=L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#0EA5A4;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);"></div>',iconSize:[22,22],iconAnchor:[11,11]});
+    L.marker([wLat,wLng],{icon:tPin}).addTo(m).bindPopup('Worker');
+    L.polyline([[wLat,wLng],[lat,lng]],{color:'#0FA958',weight:4,dashArray:'8,6',opacity:0.85}).addTo(m);
+    m.fitBounds([[lat,lng],[wLat,wLng]],{padding:[28,28]});
+  }
+  setTimeout(function(){try{m.invalidateSize();}catch(e){}},120);
+  setTimeout(function(){try{m.invalidateSize();}catch(e){}},500);
+  showLoading(opts.loadId,false);
+  maps[elId]=m;
+}
+
+function resolveGPS(onOk,onFail){
+  if(gps){onOk(gps);return;}
+  if(!navigator.geolocation){onFail('no-api');return;}
+  navigator.geolocation.getCurrentPosition(function(p){gps={lat:p.coords.latitude,lng:p.coords.longitude,label:'Your Location'};onOk(gps);},function(){onFail('denied');},{timeout:10000,maximumAge:60000,enableHighAccuracy:true});
+}
+
+function initPostMap(){
+  showLoading('map-post-loading',true);
+  updateGPSStatus('fetching');
+  resolveGPS(
+    function(g){updateGPSStatus('ok',g.label);_onLeaflet(function(){buildMap('map-post',g.lat,g.lng,14,{label:g.label,loadId:'map-post-loading'});});},
+    function(){updateGPSStatus('fail');var c=STATE_CENTRES.AP;_onLeaflet(function(){buildMap('map-post',c.lat,c.lng,c.zoom,{label:c.label,loadId:'map-post-loading'});});}
+  );
+}
+function retryGPS(){gps=null;initPostMap();}
+function updateGPSStatus(state,info){
+  var ic=document.getElementById('post-gps-icon'),tx=document.getElementById('post-gps-text');
+  if(!ic||!tx)return;
+  if(state==='fetching'){ic.textContent='📡';tx.textContent=t('gps_fetching');tx.style.color='var(--text-secondary)';}
+  else if(state==='ok'){ic.textContent='✅';tx.textContent=t('gps_ok')+(info||'');tx.style.color='var(--green)';}
+  else{ic.textContent='⚠️';tx.textContent=t('gps_fail');tx.style.color='#B45309';}
+}
+function jumpToState(key,state){
+  var c=STATE_CENTRES[state];
+  var ab=document.getElementById(key+'-ap-btn'),tb=document.getElementById(key+'-tn-btn');
+  if(ab)ab.classList.toggle('active',state==='AP');if(tb)tb.classList.toggle('active',state==='TN');
+  showLoading('map-'+key+'-loading',true);
+  gps={lat:c.lat,lng:c.lng,label:c.label};
+  if(key==='post')updateGPSStatus('ok',c.label);
+  _onLeaflet(function(){buildMap('map-'+key,c.lat,c.lng,c.zoom,{label:c.label,loadId:'map-'+key+'-loading'});});
+  showSnack(state==='AP'?'Andhra Pradesh':'Tamil Nadu');
+}
+function openDetailMap(lat,lng,label){showLoading('map-detail-loading',true);_onLeaflet(function(){buildMap('map-detail',lat,lng,14,{label:label,loadId:'map-detail-loading'});});}
+function openAcceptedMap(lat,lng,label){showLoading('map-accepted-loading',true);_onLeaflet(function(){buildMap('map-accepted',lat,lng,13,{label:label,loadId:'map-accepted-loading',withRoute:true});});}
+
+/* ══════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════ */
+function goTo(id){
+  var prev=document.getElementById(currentScreen),next=document.getElementById(id);
+  if(!prev||!next||currentScreen===id)return;
+  prev.classList.remove('active');prev.classList.add('slide-left');next.classList.add('active');
+  prevScreen=currentScreen;currentScreen=id;
+  setTimeout(function(){prev.classList.remove('slide-left');},400);
+  if(id==='screen-home')setTimeout(renderHome,50);
+  if(id==='screen-browse')setTimeout(renderBrowse,50);
+  if(id==='screen-history')setTimeout(function(){renderHistory('requests');},50);
+  if(id==='screen-profile-view')setTimeout(renderProfileView,50);
+  if(id==='screen-notif')setTimeout(renderNotifications,50);
+  if(id==='screen-post')setTimeout(initPostMap,460);
+}
+function goBack(){if(prevScreen)goTo(prevScreen);else goTo('screen-home');}
+
+/* ══════════════════════════════════════════════
+   FORM HELPERS
+══════════════════════════════════════════════ */
+function selectToggle(el,c){c.querySelectorAll('.toggle-option').forEach(function(o){o.classList.remove('active');});el.classList.add('active');}
+function togglePill(el){el.classList.toggle('selected');}
+function selectSinglePill(el,cid){document.getElementById(cid).querySelectorAll('.cat-pill').forEach(function(p){p.classList.remove('selected');});el.classList.add('selected');}
+function otpAutoTab(el,i){if(el.value.length===1){var b=document.querySelectorAll('#otp-inputs .otp-box');if(i<b.length-1)b[i+1].focus();}}
+
+function setHomeRole(role){
+  activeHomeRole=role;
+  document.getElementById('home-customer').classList.toggle('active',role==='customer');
+  document.getElementById('home-worker').classList.toggle('active',role==='worker');
+  document.getElementById('home-customer-area').style.display=role==='customer'?'block':'none';
+  document.getElementById('home-worker-area').style.display=role==='worker'?'block':'none';
+  setText('home-role-badge',role==='customer'?t('home_role_customer'):t('home_role_worker'));
+}
+
+/* ══════════════════════════════════════════════
+   ONBOARDING
+══════════════════════════════════════════════ */
+function handleSendOTP(){
+  var name=document.getElementById('input-name').value.trim();
+  var phone=document.getElementById('input-phone').value.trim();
+  if(!name||phone.length<10){var e=document.getElementById('phone-error');e.textContent=t('phone_error');e.style.display='block';return;}
+  document.getElementById('phone-error').style.display='none';
+  user.name=name;user.phone=phone;user.initials=makeInitials(name);
+  document.getElementById('otp-phone-display').textContent='+91 '+phone;
+  goTo('screen-otp');
+}
+function verifyOTP(){
+  var boxes=document.querySelectorAll('#otp-inputs .otp-box'),code='';
+  boxes.forEach(function(b){code+=b.value;});
+  if(code.length<4){showSnack(t('demo_note'));return;}
+  boxes.forEach(function(b){b.value='';});
+  document.getElementById('profile-avatar-lg').textContent=user.initials;
+  goTo('screen-profile');
+}
+function saveProfile(){
+  user.occupation=document.getElementById('input-occupation').value.trim();
+  user.about=document.getElementById('input-about').value.trim();
+  user.skills=[];
+  /* Store canonical English key for each selected skill */
+  var skillKeys=['Electrical','Plumbing','Carpentry','Farming','Driving','Cooking','Teaching','General'];
+  document.querySelectorAll('#skill-pills .cat-pill').forEach(function(p,i){if(p.classList.contains('selected'))user.skills.push(skillKeys[i]);});
+  goTo('screen-home');
+  showSnack(t('profile_save_btn'));
+}
+function skipProfile(){goTo('screen-home');showSnack('Welcome, '+user.name.split(' ')[0]+'!');}
+
+/* ══════════════════════════════════════════════
+   POST REQUEST
+══════════════════════════════════════════════ */
+function submitPostRequest(){
+  var desc=document.getElementById('post-description').value.trim();
+  var selCat=document.querySelector('#post-category-pills .cat-pill.selected');
+  document.getElementById('post-desc-error').style.display='none';
+  document.getElementById('post-cat-error').style.display='none';
+  if(!desc){var de=document.getElementById('post-desc-error');de.textContent=t('post_desc_error');de.style.display='block';return;}
+  if(!selCat){var ce=document.getElementById('post-cat-error');ce.textContent=t('post_cat_error');ce.style.display='block';return;}
+  var catKey=selCat.getAttribute('data-cat');
+  var urgency=(document.querySelector('#post-urgency .toggle-option.active')||{}).id==='urg-urgent'?'Urgent':'Normal';
+  var loc=gps||{lat:STATE_CENTRES.AP.lat,lng:STATE_CENTRES.AP.lng,label:'Vijayawada, AP'};
+  myRequests.push({
+    id:'my'+Date.now(),owner:user.name,ownerInit:user.initials,ownerColor:'#0FA958',phone:user.phone,
+    desc:desc,category:catKey,urgency:urgency,
+    lat:loc.lat,lng:loc.lng,locationLabel:loc.label,
+    time:Date.now(),status:'Pending',accepted:false
+  });
+  document.getElementById('post-description').value='';
+  document.querySelectorAll('#post-category-pills .cat-pill').forEach(function(p){p.classList.remove('selected');});
+  goTo('screen-home');
+  showSnack(t('post_success'));
+}
+
+/* ══════════════════════════════════════════════
+   BROWSE
+══════════════════════════════════════════════ */
+function allBrowseRequests(){return seedRequests.filter(function(r){return !r.accepted;});}
+function filterBrowse(cat,el){
+  currentBrowseFilter=cat;
+  document.querySelectorAll('#screen-browse .cat-pill').forEach(function(p){p.classList.remove('selected');});
+  if(el)el.classList.add('selected');
+  renderBrowse();
+}
+function renderBrowse(){
+  var container=document.getElementById('browse-list');
+  var all=allBrowseRequests();
+  var filtered=all.filter(function(r){return currentBrowseFilter==='all'||r.category===currentBrowseFilter;});
+  var badge=document.getElementById('browse-count-badge');
+  if(filtered.length>0){badge.style.display='block';document.getElementById('browse-count-text').textContent=filtered.length+' '+t('browse_available');}
+  else{badge.style.display='none';}
+  if(filtered.length===0){container.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><p>'+h(t('browse_empty'))+'</p></div>';return;}
+  /* Show loading placeholder while translating */
+  container.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-secondary);font-size:13px;">'+t('map_loading_text')+'</div>';
+  if(lang==='en'){
+    renderBrowseCards(filtered,filtered.map(function(r){return r.desc;}));
+    return;
+  }
+  /* Batch: check cache first, collect what needs translating */
+  var descs=filtered.map(function(r){
+    var cacheField='desc_'+lang;
+    return r[cacheField]||null;
+  });
+  var allCached=descs.every(function(d){return d!==null;});
+  if(allCached){renderBrowseCards(filtered,descs);return;}
+  /* Translate all at once */
+  var rawDescs=filtered.map(function(r){return r.desc;});
+  aiTranslate(rawDescs,lang,function(arr){
+    filtered.forEach(function(r,i){r['desc_'+lang]=arr[i]||r.desc;});
+    renderBrowseCards(filtered,arr);
+  });
+}
+function renderBrowseCards(filtered,translatedDescs){
+  var container=document.getElementById('browse-list');
+  var html='<div style="display:flex;flex-direction:column;gap:12px;padding-top:4px;">';
+  filtered.forEach(function(r,i){
+    var idx=seedRequests.indexOf(r);
+    var td=translatedDescs[i]||r.desc;
+    var urgClass=r.urgency==='Urgent'?'badge-amber':'badge-teal';
+    var urgLabel=r.urgency==='Urgent'?'🔴 '+t('urg_urgent'):t('urg_normal');
+    html+='<div class="req-card" onclick="openDetail(\'seed\','+idx+')">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span class="badge '+urgClass+'">'+urgLabel+'</span><span style="font-size:12px;color:var(--text-secondary);">'+h(r.locationLabel)+'</span></div>';
+    html+='<p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">'+h(td.substring(0,65))+(td.length>65?'...':'')+'</p>';
+    html+='<div style="display:flex;align-items:center;gap:10px;">';
+    html+='<div class="avatar" style="width:32px;height:32px;font-size:11px;background:'+r.ownerColor+';">'+h(r.ownerInit)+'</div>';
+    html+='<div><p style="font-size:13px;font-weight:500;color:var(--text-primary);">'+h(r.owner)+'</p><p style="font-size:11px;color:var(--text-secondary);">'+timeAgo(r.time)+'</p></div>';
+    html+='<button class="btn-primary" style="margin-left:auto;padding:8px 16px;width:auto;font-size:13px;" onclick="event.stopPropagation();openDetail(\'seed\','+idx+');setTimeout(acceptJob,150)">'+t('btn_accept_short')+'</button>';
+    html+='</div></div>';
+  });
+  html+='</div>';
+  container.innerHTML=html;
+}
+
+/* ══════════════════════════════════════════════
+   DETAIL
+══════════════════════════════════════════════ */
+function openDetail(type,idx){
+  selectedDetailIndex={type:type,idx:idx};
+  var r=type==='seed'?seedRequests[idx]:myRequests[idx];
+  if(!r)return;
+  var urgClass=r.urgency==='Urgent'?'badge-amber':'badge-teal';
+  var urgLabel=r.urgency==='Urgent'?t('urg_urgent'):t('urg_normal');
+  translateRequestDesc(r,function(td){
+    var dc=document.getElementById('detail-content');
+    dc.innerHTML=
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">'
+      +'<div class="avatar" style="background:'+r.ownerColor+';">'+h(r.ownerInit)+'</div>'
+      +'<div><p style="font-size:16px;font-weight:700;color:var(--text-primary);">'+h(r.owner)+'</p>'
+      +'<p style="font-size:12px;color:var(--text-secondary);">'+h(r.locationLabel)+'</p></div>'
+      +'<span class="badge '+urgClass+'" style="margin-left:auto;">'+urgLabel+'</span></div>'
+      +'<div class="card-surface" style="margin-bottom:14px;">'
+      +'<p style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">'+h(td)+'</p>'
+      +'<div style="display:flex;gap:8px;margin-top:10px;"><span class="badge badge-teal">'+catLabel(r.category)+'</span>'
+      +'<span style="font-size:12px;color:var(--text-secondary);">'+timeAgo(r.time)+'</span></div></div>'
+      +'<div style="margin-bottom:14px;">'
+      +'<p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">'+h(t('lbl_location'))+'</p>'
+      +'<div style="position:relative;">'
+      +'<div class="map-box" id="map-detail"></div>'
+      +'<div class="map-loading" id="map-detail-loading"><div class="map-loading-spinner"></div><p>'+h(t('map_loading_text'))+'</p></div></div>'
+      +'<p style="font-size:12px;color:var(--text-secondary);margin-top:6px;">'+h(t('detail_exact_addr'))+'</p></div>'
+      +'<div class="card-surface">'
+      +'<p style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">REQUEST INFO</p>'
+      +'<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;color:var(--text-secondary);">'+h(t('detail_info_location'))+'</span><span style="font-size:13px;font-weight:600;color:var(--text-primary);">'+h(r.locationLabel)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span style="font-size:13px;color:var(--text-secondary);">'+h(t('detail_info_category'))+'</span><span style="font-size:13px;font-weight:600;color:var(--text-primary);">'+catName(r.category)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;padding:7px 0;"><span style="font-size:13px;color:var(--text-secondary);">'+h(t('detail_info_status'))+'</span><span class="badge badge-amber">'+t('detail_status_pending')+'</span></div></div>';
+    setText('btn-accept',t('btn_accept'));
+  });
+  goTo('screen-detail');
+  setTimeout(function(){openDetailMap(r.lat,r.lng,r.locationLabel);},460);
+}
+
+/* ══════════════════════════════════════════════
+   ACCEPT JOB
+══════════════════════════════════════════════ */
+function acceptJob(){
+  if(!selectedDetailIndex)return;
+  var type=selectedDetailIndex.type,idx=selectedDetailIndex.idx;
+  var r=type==='seed'?seedRequests[idx]:myRequests[idx];
+  if(!r)return;
+  r.accepted=true;r.status='Accepted';
+  acceptedJobIndex={type:type,idx:idx};
+  translateRequestDesc(r,function(td){
+    var ac=document.getElementById('accepted-content');
+    ac.innerHTML=
+      '<div style="text-align:center;margin-bottom:18px;padding:18px;background:#E8F8EF;border-radius:16px;">'
+      +'<div style="width:52px;height:52px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">'
+      +'<svg width="26" height="26" viewBox="0 0 28 28" fill="none"><path d="M5 14l6 6L23 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+      +'<p style="font-size:16px;font-weight:700;color:var(--green);">'+h(t('accepted_req_accepted'))+'</p>'
+      +'<p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">'+h(t('accepted_unlocked'))+'</p></div>'
+      +'<div class="card-surface" style="margin-bottom:14px;">'
+      +'<p style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">'+h(t('accepted_customer'))+'</p>'
+      +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
+      +'<div class="avatar" style="background:'+r.ownerColor+';">'+h(r.ownerInit)+'</div>'
+      +'<div><p style="font-size:15px;font-weight:700;color:var(--text-primary);">'+h(r.owner)+'</p>'
+      +'<p style="font-size:13px;color:var(--teal);">+91 '+h(r.phone)+'</p></div></div>'
+      +'<div style="padding-top:10px;border-top:1px solid var(--border);">'
+      +'<p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">'+h(t('accepted_problem'))+'</p>'
+      +'<p style="font-size:14px;font-weight:500;color:var(--text-primary);">'+h(td)+'</p></div></div>'
+      +'<div style="margin-bottom:14px;">'
+      +'<p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">'+h(t('accepted_navigate'))+'</p>'
+      +'<div style="position:relative;">'
+      +'<div class="map-box" id="map-accepted"></div>'
+      +'<div class="map-loading" id="map-accepted-loading"><div class="map-loading-spinner"></div><p>'+h(t('map_loading_text'))+'</p></div></div>'
+      +'<button class="btn-secondary" style="margin-top:10px;" onclick="showSnack(t(\'open_maps_snack\'))">'+h(t('btn_open_maps'))+'</button></div>';
+    setText('accepted-title',t('accepted_title'));
+    setText('btn-mark-complete',t('btn_mark_complete'));
+    /* Rate screen */
+    var cc=document.getElementById('complete-content');
+    cc.innerHTML=
+      '<div style="text-align:center;margin-bottom:24px;">'
+      +'<div class="avatar-lg" style="margin:0 auto 12px;background:'+r.ownerColor+';">'+h(r.ownerInit)+'</div>'
+      +'<p style="font-size:16px;font-weight:700;color:var(--text-primary);">'+h(r.owner)+'</p>'
+      +'<p style="font-size:13px;color:var(--text-secondary);">'+h(r.locationLabel)+'</p></div>'
+      +'<div style="text-align:center;margin-bottom:24px;">'
+      +'<p style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:12px;">'+h(t('rate_q'))+'</p>'
+      +'<div style="display:flex;justify-content:center;gap:8px;" id="rating-stars">'
+      +'<span class="star filled" onclick="setRating(1)">★</span><span class="star filled" onclick="setRating(2)">★</span>'
+      +'<span class="star filled" onclick="setRating(3)">★</span><span class="star filled" onclick="setRating(4)">★</span>'
+      +'<span class="star" onclick="setRating(5)">★</span></div>'
+      +'<p id="rating-label" style="font-size:13px;color:var(--text-secondary);margin-top:8px;">4 out of 5</p></div>'
+      +'<div style="margin-bottom:16px;"><p class="input-label">'+h(t('rate_comment_lbl'))+'</p>'
+      +'<textarea class="input-field" rows="3" placeholder="'+h(t('rate_comment_ph'))+'" style="resize:none;"></textarea></div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">'
+      +'<div class="cat-pill" onclick="togglePill(this)">'+t('review_quick')+'</div>'
+      +'<div class="cat-pill" onclick="togglePill(this)">'+t('review_good')+'</div>'
+      +'<div class="cat-pill" onclick="togglePill(this)">'+t('review_friendly')+'</div>'
+      +'<div class="cat-pill" onclick="togglePill(this)">'+t('review_professional')+'</div>'
+      +'<div class="cat-pill" onclick="togglePill(this)">'+t('review_ontime')+'</div></div>'
+      +'<button class="btn-primary" onclick="submitReview()">'+t('btn_submit_review')+'</button>'
+      +'<button class="btn-ghost" style="width:100%;margin-top:8px;" onclick="goTo(\'screen-home\')">'+t('btn_skip_review')+'</button>';
+    setText('rate-title',t('rate_title'));
+  });
+  goTo('screen-accepted');
+  showSnack(t('accepted_req_accepted'));
+  setTimeout(function(){openAcceptedMap(r.lat,r.lng,r.locationLabel);},460);
+}
+
+function submitReview(){
+  if(acceptedJobIndex){
+    var r=acceptedJobIndex.type==='seed'?seedRequests[acceptedJobIndex.idx]:myRequests[acceptedJobIndex.idx];
+    if(r)r.status='Completed';
+    acceptedJobs.push({ref:acceptedJobIndex,completedAt:Date.now()});
+    user.jobsDone++;user.points+=50;
+  }
+  acceptedJobIndex=null;selectedDetailIndex=null;
+  goTo('screen-home');showSnack(t('review_success'));
+}
+
+/* ══════════════════════════════════════════════
+   HOME RENDER
+══════════════════════════════════════════════ */
+function renderHome(){
+  document.getElementById('home-greeting-name').textContent=user.name||'Welcome';
+  document.getElementById('home-notif-dot').style.display=myRequests.length>0?'block':'none';
+  setText('home-role-badge',activeHomeRole==='customer'?t('home_role_customer'):t('home_role_worker'));
+  /* My requests */
+  var active=myRequests.filter(function(r){return r.status==='Pending'||r.status==='Accepted';});
+  var mrc=document.getElementById('home-my-requests');
+  if(active.length===0){
+    mrc.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>'+h(t('no_active_requests'))+'</p></div>';
+  } else {
+    var slice=active.slice(0,2);
+    function buildHomeReqs(descs){
+      var hh='<div style="display:flex;flex-direction:column;gap:12px;">';
+      slice.forEach(function(r,i){
+        var td=descs[i]||r.desc;
+        var ri=myRequests.indexOf(r);
+        var sc=r.status==='Accepted'?'badge-green':'badge-amber';
+        hh+='<div class="req-card" onclick="openDetail(\'my\','+ri+')">';
+        hh+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
+        hh+='<p style="font-size:14px;font-weight:600;color:var(--text-primary);">'+h(td.substring(0,50))+(td.length>50?'...':'')+'</p>';
+        hh+='<span class="badge '+sc+'" style="margin-left:8px;flex-shrink:0;">'+statusLabel(r.status)+'</span></div>';
+        hh+='<div style="display:flex;align-items:center;gap:8px;"><span class="badge badge-teal">'+catLabel(r.category)+'</span><span style="font-size:11px;color:var(--text-secondary);">'+timeAgo(r.time)+'</span></div></div>';
+      });
+      hh+='</div>';
+      mrc.innerHTML=hh;
+    }
+    if(lang==='en'){buildHomeReqs(slice.map(function(r){return r.desc;}));return;}
+    aiTranslate(slice.map(function(r){return r.desc;}),lang,function(arr){buildHomeReqs(arr);});
+  }
+  /* Skills */
+  var sc=document.getElementById('home-my-skills');
+  if(sc){
+    if(user.skills.length>0){
+      sc.innerHTML=user.skills.map(function(s){return'<span class="badge badge-green">'+catLabel(s)+'</span>';}).join('');
+    } else {
+      sc.innerHTML='<p style="font-size:13px;color:var(--text-secondary);">'+t('no_skills')+' <span style="color:var(--teal);cursor:pointer;" onclick="goTo(\'screen-profile\')">'+t('add_skills_link')+'</span></p>';
+    }
+  }
+  var pending=allBrowseRequests().length;
+  var bb=document.getElementById('home-browse-badge');
+  if(bb)bb.textContent=pending+' '+t('browse_available');
+  setHomeRole(activeHomeRole);
+}
+
+/* ══════════════════════════════════════════════
+   HISTORY RENDER
+══════════════════════════════════════════════ */
+function renderHistory(tab){
+  var c=document.getElementById('history-list');
+  var items=tab==='requests'?myRequests:acceptedJobs.map(function(j){return j.ref.type==='seed'?seedRequests[j.ref.idx]:myRequests[j.ref.idx];}).filter(Boolean);
+  if(items.length===0){
+    c.innerHTML='<div class="empty-state"><div class="empty-icon">'+(tab==='requests'?'📋':'🔨')+'</div><p>'+h(tab==='requests'?t('hist_empty_req'):t('hist_empty_jobs'))+'</p></div>';
+    return;
+  }
+  function buildHistoryHTML(descs){
+    var hh='<div style="display:flex;flex-direction:column;gap:12px;">';
+    items.forEach(function(r,i){
+      var td=descs[i]||r.desc;
+      var sc=r.status==='Completed'?'badge-green':r.status==='Accepted'?'badge-teal':r.status==='Cancelled'?'badge-red':'badge-amber';
+      var ds=new Date(r.time).toLocaleDateString('en-IN',{month:'short',day:'numeric'});
+      hh+='<div class="req-card">';
+      hh+='<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span class="badge '+sc+'">'+statusLabel(r.status)+'</span><span style="font-size:11px;color:var(--text-secondary);">'+h(r.locationLabel||'—')+' · '+ds+'</span></div>';
+      hh+='<p style="font-size:14px;font-weight:600;color:var(--text-primary);">'+h(td.substring(0,60))+(td.length>60?'...':'')+'</p>';
+      hh+='<div style="display:flex;gap:8px;margin-top:8px;"><span class="badge badge-teal">'+catLabel(r.category)+'</span></div></div>';
+    });
+    hh+='</div>';
+    c.innerHTML=hh;
+  }
+  if(lang==='en'){buildHistoryHTML(items.map(function(r){return r.desc;}));return;}
+  var rawDescs=items.map(function(r){return r.desc;});
+  var cached=rawDescs.map(function(desc,i){return items[i]['desc_'+lang]||null;});
+  if(cached.every(function(d){return d!==null;})){buildHistoryHTML(cached);return;}
+  aiTranslate(rawDescs,lang,function(arr){
+    items.forEach(function(r,i){r['desc_'+lang]=arr[i]||r.desc;});
+    buildHistoryHTML(arr);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   PROFILE VIEW RENDER
+══════════════════════════════════════════════ */
+function renderProfileView(){
+  var c=document.getElementById('profile-view-content');
+  if(!c)return;
+  var sb=user.skills.length>0
+    ? user.skills.map(function(s){return'<span class="badge badge-green">'+catLabel(s)+'</span>';}).join('')
+    : '<span style="font-size:13px;color:var(--text-secondary);">'+h(t('no_skills'))+'</span>';
+
+  function buildProfileView(occT,aboutT){
+    var occHtml=occT?'<p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">'+h(occT)+'</p>':'';
+    var aboutHtml=aboutT?'<div class="card-surface" style="margin:0 20px 16px;"><p style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">ABOUT</p><p style="font-size:13px;color:var(--text-primary);line-height:1.6;">'+h(aboutT)+'</p></div>':'';
+    c.innerHTML=
+      '<div style="background:linear-gradient(160deg,#E8F8EF,#fff);padding:28px 20px 20px;text-align:center;">'
+      +'<div class="avatar-lg" style="margin:0 auto 12px;">'+h(user.initials||'?')+'</div>'
+      +'<h2 style="font-size:20px;font-weight:700;color:var(--text-primary);">'+h(user.name||'—')+'</h2>'
+      +occHtml
+      +'<div style="margin-top:8px;"><span class="badge badge-teal">🙋 '+t('home_role_customer')+'</span>&nbsp;<span class="badge badge-green">🔨 '+t('home_role_worker')+'</span></div>'
+      +'<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px;">'+sb+'</div></div>'
+      +aboutHtml
+      +'<div style="padding:20px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px;">'
+      +'<div style="text-align:center;background:var(--surface);border-radius:12px;padding:14px;"><p style="font-size:22px;font-weight:700;color:var(--green);">'+user.jobsDone+'</p><p style="font-size:11px;color:var(--text-secondary);">'+t('lbl_jobs_done')+'</p></div>'
+      +'<div style="text-align:center;background:var(--surface);border-radius:12px;padding:14px;"><p style="font-size:22px;font-weight:700;color:var(--teal);">'+myRequests.length+'</p><p style="font-size:11px;color:var(--text-secondary);">'+t('lbl_requests')+'</p></div>'
+      +'<div style="text-align:center;background:var(--surface);border-radius:12px;padding:14px;"><p style="font-size:22px;font-weight:700;color:var(--amber);">'+user.points+'</p><p style="font-size:11px;color:var(--text-secondary);">'+t('lbl_points')+'</p></div></div>'
+      +'<div style="height:1px;background:var(--border);margin:0 0 16px;"></div>'
+      +'<div style="display:flex;flex-direction:column;">'
+      +'<div style="padding:14px 0;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid var(--border);" onclick="goTo(\'screen-profile\')"><span style="font-size:20px;">✏️</span><span style="font-size:14px;font-weight:500;color:var(--text-primary);">'+t('lbl_edit_profile')+'</span><span style="margin-left:auto;color:var(--text-secondary);">→</span></div>'
+      +'<div style="padding:14px 0;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid var(--border);" onclick="goTo(\'screen-lang\')"><span style="font-size:20px;">🌐</span><span style="font-size:14px;font-weight:500;color:var(--text-primary);">'+t('lbl_change_lang')+'</span><span style="margin-left:auto;color:var(--text-secondary);">→</span></div>'
+      +'<div style="padding:14px 0;display:flex;align-items:center;gap:12px;cursor:pointer;border-bottom:1px solid var(--border);" onclick="showSnack(\''+h(t('settings_soon'))+'\')"><span style="font-size:20px;">⚙️</span><span style="font-size:14px;font-weight:500;color:var(--text-primary);">'+t('lbl_settings')+'</span><span style="margin-left:auto;color:var(--text-secondary);">→</span></div>'
+      +'<div style="padding:14px 0;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="signOut()"><span style="font-size:20px;">🚪</span><span style="font-size:14px;font-weight:500;color:#EF4444;">'+t('lbl_sign_out')+'</span></div>'
+      +'</div></div>';
+  }
+
+  /* Always render immediately with original text first — never leave screen blank */
+  buildProfileView(user.occupation, user.about);
+
+  /* If non-English and there's user text to translate, update in place after API responds */
+  if(lang!=='en'){
+    var toTx=[], occIdx=-1, aboutIdx=-1;
+    if(user.occupation){occIdx=toTx.length; toTx.push(user.occupation);}
+    if(user.about){aboutIdx=toTx.length; toTx.push(user.about);}
+    if(toTx.length>0){
+      aiTranslate(toTx, lang, function(arr){
+        buildProfileView(
+          occIdx>=0 ? (arr[occIdx]||user.occupation) : user.occupation,
+          aboutIdx>=0 ? (arr[aboutIdx]||user.about) : user.about
+        );
+      });
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════
+   NOTIFICATIONS RENDER
+══════════════════════════════════════════════ */
+function renderNotifications(){
+  var c=document.getElementById('notif-list');
+  if(myRequests.length===0&&acceptedJobs.length===0){c.innerHTML='<div class="empty-state"><div class="empty-icon">🔔</div><p>'+h(t('notif_empty'))+'</p></div>';return;}
+  var hh='<div style="display:flex;flex-direction:column;gap:10px;">';
+  acceptedJobs.forEach(function(j){
+    var r=j.ref.type==='seed'?seedRequests[j.ref.idx]:myRequests[j.ref.idx];if(!r)return;
+    translateRequestDesc(r,function(td){
+      /* We build these synchronously after translate so just update innerHTML each time */
+    });
+    hh+='<div style="padding:14px;background:#E8F8EF;border-radius:12px;">'
+      +'<div style="display:flex;gap:10px;"><div style="width:40px;height:40px;background:var(--green);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:16px;">✓</div>'
+      +'<div><p style="font-size:14px;font-weight:600;color:var(--text-primary);">'+t('notif_accepted_job')+'</p>'
+      +'<p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">'+h(r.desc.substring(0,50))+'…</p>'
+      +'<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">'+timeAgo(j.completedAt)+'</p></div></div></div>';
+  });
+  myRequests.filter(function(r){return r.status==='Pending';}).forEach(function(r){
+    hh+='<div style="padding:14px;border:1px solid var(--border);border-radius:12px;">'
+      +'<div style="display:flex;gap:10px;"><div style="width:40px;height:40px;background:var(--surface);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;">👁</div>'
+      +'<div><p style="font-size:14px;font-weight:600;color:var(--text-primary);">'+t('notif_posted')+'</p>'
+      +'<p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">'+t('notif_posted_sub')+'</p>'
+      +'<p style="font-size:11px;color:var(--text-secondary);margin-top:4px;">'+timeAgo(r.time)+'</p></div></div></div>';
+  });
+  hh+='</div>';
+  c.innerHTML=hh;
+}
+
+/* ══════════════════════════════════════════════
+   RATING / SIGN OUT / CLOCK
+══════════════════════════════════════════════ */
+function setRating(n){document.querySelectorAll('#rating-stars .star').forEach(function(s,i){s.classList.toggle('filled',i<n);});var l=document.getElementById('rating-label');if(l)l.textContent=n+' out of 5';}
+
+function signOut(){
+  user={name:'',phone:'',initials:'',occupation:'',about:'',skills:[],jobsDone:0,points:0};
+  myRequests=[];acceptedJobs=[];gps=null;selectedDetailIndex=null;acceptedJobIndex=null;activeHomeRole='customer';
+  seedRequests.forEach(function(r){r.accepted=false;r.status='Pending';});
+  Object.keys(maps).forEach(function(k){try{maps[k].remove();}catch(e){}delete maps[k];});
+  document.getElementById('input-name').value='';document.getElementById('input-phone').value='';
+  goTo('screen-lang');showSnack(t('signed_out'));
+}
+
+function updateClock(){var n=new Date(),hr=n.getHours()%12||12,mn=n.getMinutes();var tx=hr+':'+(mn<10?'0':'')+mn;document.querySelectorAll('.status-time').forEach(function(el){el.textContent=tx;});}
+updateClock();setInterval(updateClock,30000);
+</script>
+</body>
+</html>
